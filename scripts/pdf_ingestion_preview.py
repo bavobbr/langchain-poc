@@ -1,3 +1,4 @@
+"""Preview Unstructured PDF ingestion and a simple Vertex AI smoke test."""
 import os
 from langchain_google_vertexai import VertexAI
 from langchain_community.document_loaders import UnstructuredPDFLoader

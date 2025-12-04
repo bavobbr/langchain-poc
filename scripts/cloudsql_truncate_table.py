@@ -1,3 +1,4 @@
+"""Truncate the vector table in Cloud SQL (dangerous, for dev use)."""
 import sqlalchemy
 from langchain_google_cloud_sql_pg import PostgresEngine
 import config

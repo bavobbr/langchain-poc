@@ -1,3 +1,4 @@
+"""Compare PDF loaders (PyPDF, PDFPlumber, Unstructured) with diagnostics."""
 from langchain_community.document_loaders import PyPDFLoader, PDFPlumberLoader, UnstructuredPDFLoader
 
 def test_loader(name, loader_class, file_path):

@@ -1,3 +1,4 @@
+"""End-to-end RAG pipeline using Cloud SQL (pgvector) and Vertex AI."""
 import asyncio
 import re
 from langchain_google_vertexai import VertexAIEmbeddings, VertexAI

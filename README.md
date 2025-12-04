@@ -138,7 +138,7 @@ GCP_REGION=europe-west1
 CLOUDSQL_INSTANCE=fih-rag-db
 ```
 
-Run as usual (no extra flags needed): `streamlit run app.py` or `python scripts/debug_schema.py`. The `.env` file is ignored by Git.
+Run as usual (no extra flags needed): `streamlit run app.py` or `python scripts/cloudsql_debug_schema.py`. The `.env` file is ignored by Git.
 
 ### 3. Infrastructure Setup (One-time)
 This project requires a Cloud SQL instance with the `pgvector` extension. Run these commands to provision the infrastructure:

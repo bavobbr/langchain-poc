@@ -7,7 +7,7 @@ This guide helps contributors work efficiently in this LangChain + Streamlit RAG
 - `rag_engine.py` – Orchestration, chunking, retrieval, LLM calls (Controller).
 - `database.py` – Raw SQL + connectors for Cloud SQL/Postgres (Model/Repository).
 - `config.py` – Configuration constants (project, region, DB, table names).
-- `scripts/` – Developer utilities (e.g., `debug_schema.py`, `ingest_poc.py`).
+- `scripts/` – Developer utilities (e.g., `cloudsql_debug_schema.py`, `pdf_ingestion_preview.py`).
 - `docs/` – Source PDFs used for ingestion.
 - `chroma_db/` – Optional local vector store for debugging.
 - `Dockerfile`, `requirements.txt`, `.gcloudignore` – Build and deploy assets.
@@ -19,9 +19,9 @@ This guide helps contributors work efficiently in this LangChain + Streamlit RAG
 - Run locally (Streamlit UI):
   - `streamlit run app.py`
 - Smoke tests and debugging:
-  - `python scripts/debug_schema.py` – Inspect DB schema via Cloud SQL.
-  - `python scripts/compare_loaders.py` – Compare PDF loaders.
-  - `python scripts/inspect_rules.py` – Validate chunking output.
+- `python scripts/cloudsql_debug_schema.py` – Inspect DB schema via Cloud SQL.
+- `python scripts/pdf_compare_loaders.py` – Compare PDF loaders.
+- `python scripts/pdf_chunk_preview.py` – Validate chunking output.
 - Deploy (Cloud Run): use the command shown in `README.md`.
 
 ## Coding Style & Naming Conventions
@@ -43,4 +43,3 @@ This guide helps contributors work efficiently in this LangChain + Streamlit RAG
 ## Security & Configuration Tips
 - Do not commit secrets. Prefer `gcloud auth application-default login` and environment variables for local/dev.
 - For Cloud SQL, confirm roles: Cloud SQL Client; for LLMs: Vertex AI User. Keep strong DB passwords and rotate as needed.
-

@@ -1,3 +1,4 @@
+"""Extract and preview rule-aware chunks from a PDF (PDFPlumber)."""
 import re
 from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_core.documents import Document

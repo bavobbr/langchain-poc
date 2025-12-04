@@ -1,3 +1,4 @@
+"""Inspect Cloud SQL table schema and library view for debugging."""
 import asyncio
 import sqlalchemy
 from langchain_google_cloud_sql_pg import PostgresEngine, Column

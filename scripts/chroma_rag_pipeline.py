@@ -1,3 +1,4 @@
+"""End-to-end RAG pipeline using local Chroma vector store."""
 import os
 import re
 import shutil

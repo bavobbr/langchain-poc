@@ -1,3 +1,4 @@
+"""Debug similarity search in a local Chroma collection."""
 from langchain_chroma import Chroma
 from langchain_google_vertexai import VertexAIEmbeddings
 
