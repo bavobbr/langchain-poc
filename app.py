@@ -1,3 +1,11 @@
+"""Streamlit UI for the FIH Rules RAG app.
+
+Responsibilities:
+- Initialize the engine and report health
+- Ingest PDFs with a selected variant
+- Provide a lightweight chat interface with routing info
+"""
+
 import traceback
 import streamlit as st
 import tempfile
@@ -7,34 +15,30 @@ from rag_engine import FIHRulesEngine
 st.set_page_config(page_title="FIH Rules Expert", page_icon="🏑")
 st.title("🏑 FIH Rules AI Agent")
 
-# --- INITIALIZATION ---
-# --- INITIALIZATION ---
+# Engine initialization (cached across reruns)
 @st.cache_resource
 def get_app_engine():
+    """Create and cache the application engine (LLM + DB)."""
     return FIHRulesEngine()
 
 try:
     engine = get_app_engine()
     st.success("✅ Connected to Cloud Knowledge Base")
 except Exception as e:
-    # 1. Show the simple error
     st.error(f"Failed to initialize engine: {e}")
-    
-    # 2. Show the FULL technical trace in the UI
+    # Surface full traceback in the UI for local/cloud debugging
     st.markdown("### Debug Traceback:")
     st.exception(e)
-    
-    # 3. Print to Cloud Run Logs (Standard Output)
+    # Also emit to logs for post‑mortem diagnostics
     print("CRITICAL INITIALIZATION ERROR:")
     print(traceback.format_exc())
-    
     st.stop()
 
-# --- SIDEBAR: INGEST WITH VARIANT ---
+# Sidebar: ingest a PDF with a selected ruleset variant
 with st.sidebar:
     st.header("📚 Knowledge Base")
     
-    # NEW: Dropdown to select the variant
+    # Select which ruleset the uploaded PDF belongs to
     selected_variant = st.selectbox(
         "Select Ruleset Variant",
         options=list(config.VARIANTS.keys()),
@@ -49,7 +53,7 @@ with st.sidebar:
                 tmp.write(uploaded_file.getvalue())
                 tmp_path = tmp.name
             
-            # Pass the variant to the backend
+            # Persist with the selected variant label
             count = engine.ingest_pdf(tmp_path, selected_variant)
             st.success(f"Successfully indexed {count} rules for {selected_variant}!")
 
@@ -68,12 +72,12 @@ if prompt := st.chat_input("Ask a question (e.g., 'What about indoor penalty cor
         with st.spinner("Consulting the rulebook..."):
             history_list = [(m["role"], m["content"]) for m in st.session_state.messages]
             
-            # CALL ENGINE
+            # Query the engine with recent message history
             result = engine.query(prompt, history=history_list)
             
             st.markdown(result["answer"])
             
-            # NEW: Show which variant was routed
+            # Show routed ruleset and short source previews
             with st.expander("Debug: Routing & Sources"):
                 st.info(f"🚦 Router selected: **{result['variant'].upper()}**")
                 st.write(f"**Reformulated Query:** {result['standalone_query']}")

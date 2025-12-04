@@ -1,3 +1,10 @@
+"""Centralized configuration for the FIH Rules RAG app.
+
+Loads environment variables (from the OS and optionally .env) and exposes
+typed constants for use across the codebase. Secrets such as DB_PASS are
+required at runtime and not given insecure defaults.
+"""
+
 import os
 try:
     from dotenv import load_dotenv  # type: ignore
@@ -12,7 +19,7 @@ if load_dotenv:
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "langchain-poc-479114")
 REGION = os.getenv("GCP_REGION", "europe-west1")
 
-# Database Credentials
+# Database (Cloud SQL Postgres)
 INSTANCE_NAME = os.getenv("CLOUDSQL_INSTANCE", "fih-rag-db")
 DATABASE_NAME = "hockey_db"
 TABLE_NAME = "hockey_rules_vectors"
@@ -24,8 +31,7 @@ EMBEDDING_MODEL = "text-embedding-004"
 LLM_MODEL = "gemini-2.0-flash-lite"
 RETRIEVAL_K = 15
 
-# NEW: Supported Variants
-# Key = Database Label, Value = UI Display Name
+# Supported Variants (key = DB label, value = UI label)
 VARIANTS = {
     "outdoor": "Outdoor Hockey (Default)",
     "indoor": "Indoor Hockey",

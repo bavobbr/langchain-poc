@@ -1,19 +1,31 @@
+"""Minimal data access layer for Cloud SQL (Postgres + pgvector).
+
+Creates a SQLAlchemy pool via the Cloud SQL Python Connector and exposes
+simple batch insert and similarity search operations used by the engine.
+"""
+
 from google.cloud.sql.connector import Connector
 import sqlalchemy
 from sqlalchemy import text
 import config
 
 class PostgresVectorDB:
+    """Thin wrapper around a Postgres connection pool with vector ops."""
+
     def __init__(self):
         self.connector = Connector()
         self.pool = sqlalchemy.create_engine(
             "postgresql+pg8000://",
-            creator=self._get_conn
+            creator=self._get_conn,
         )
         self._init_schema()
 
     def _get_conn(self):
-        """Callback for SQLAlchemy to get a fresh, secure connection."""
+        """Return a fresh pg8000 connection via the Cloud SQL connector.
+
+        Raises a clear error if required credentials are missing to avoid
+        ambiguous connection failures.
+        """
         # Fail fast if required secrets are missing
         if not getattr(config, "DB_PASS", None):
             raise RuntimeError("DB_PASS environment variable is required but not set.")
@@ -28,18 +40,17 @@ class PostgresVectorDB:
         )
 
     def _init_schema(self):
-        """Ensures the vector extension exists."""
+        """Ensure the pgvector extension exists (idempotent)."""
         with self.pool.connect() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
             conn.commit()
 
     def insert_batch(self, contents, vectors, variant):
-        """
-        Bulk inserts text and vectors into the database.
-        Args:
-            contents (list[str]): List of text chunks.
-            vectors (list[list[float]]): List of embedding vectors.
-            variant (str): The context tag (e.g., 'outdoor').
+        """Insert a batch of text chunks and their embeddings.
+
+        contents: list[str] — raw text chunks
+        vectors: list[list[float]] — embedding vectors (same length as contents)
+        variant: str — ruleset label stored alongside the content
         """
         data = []
         for content, vector in zip(contents, vectors):
@@ -59,10 +70,7 @@ class PostgresVectorDB:
             conn.commit()
 
     def search(self, query_vector, variant, k=15):
-        """
-        Performs a cosine similarity search filtered by variant.
-        Returns: List of (content, variant) tuples.
-        """
+        """Return top-k similar chunks for a variant using <=> distance."""
         with self.pool.connect() as conn:
             stmt = text(f"""
                 SELECT content, variant

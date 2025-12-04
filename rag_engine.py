@@ -1,13 +1,21 @@
+"""Core RAG engine for FIH Rules.
+
+Provides ingestion (chunking + embeddings + persistence) and query handling
+(contextualization, routing, retrieval, and synthesis).
+"""
+
 from langchain_google_vertexai import VertexAIEmbeddings, VertexAI
 from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain_core.documents import Document
 import config
 import re
-from database import PostgresVectorDB  
+from database import PostgresVectorDB
 
 class FIHRulesEngine:
+    """High-level interface to embeddings, LLM, and vector DB."""
+
     def __init__(self):
-        # 1. AI Models
+        # Models
         self.embeddings = VertexAIEmbeddings(
             model_name=config.EMBEDDING_MODEL, 
             project=config.PROJECT_ID, 
@@ -19,45 +27,42 @@ class FIHRulesEngine:
             location=config.REGION,
             temperature=0
         )
-        
-        # 2. Database (Abstracted)
+        # Database
         self.db = PostgresVectorDB()
 
-    # --- INGESTION FLOW ---
+    # Ingestion
     def ingest_pdf(self, file_path, variant):
-        # A. Logic: Parse & Chunk
+        """Parse a PDF, chunk, embed and persist under a ruleset variant."""
+        # Parse & chunk
         loader = UnstructuredPDFLoader(file_path, mode="elements")
         docs = self._smarter_chunking(loader.load(), variant)
-        
-        # B. Logic: Embed
+        # Embed
         print(f"   Generating embeddings for {len(docs)} chunks...")
         texts = [d.page_content for d in docs]
         vectors = self.embeddings.embed_documents(texts)
-        
-        # C. Data Access: Persist
+        # Persist
         self.db.insert_batch(texts, vectors, variant)
         
         return len(docs)
 
-    # --- QUERY FLOW ---
+    # Querying
     def query(self, user_input, history=[]):
-        # A. Logic: Reformulate & Route
+        """Answer a user question using contextualization, routing, and RAG."""
+        # Reformulate & route
         standalone_query = self._contextualize_query(history, user_input)
         
         detected_variant = self._route_query(standalone_query)
         if detected_variant not in config.VARIANTS: 
             detected_variant = "outdoor"
-
-        # B. Logic: Embed Query
+        # Embed query
         query_vector = self.embeddings.embed_query(standalone_query)
-
-        # C. Data Access: Retrieve
+        # Retrieve
         results = self.db.search(query_vector, detected_variant, k=config.RETRIEVAL_K)
         
         # Convert DB results back to LangChain Documents for consistency
         docs = [Document(page_content=r["content"], metadata={"variant": r["variant"]}) for r in results]
         
-        # D. Logic: Synthesize Answer
+        # Synthesize answer
         context_text = "\n\n".join([d.page_content for d in docs])
         
         if not context_text:
@@ -87,8 +92,13 @@ class FIHRulesEngine:
             "source_docs": docs
         }
 
-    # --- HELPERS (Pure Logic) ---
+    # Helpers (pure logic)
     def _smarter_chunking(self, elements, variant):
+        """Aggregate PDF elements into rule-aware chunks with headings.
+
+        Uses a regex for rule numbers (e.g., 9.12) and compact section titles,
+        skipping page numbers (>20) and merging short "lonely" headers.
+        """
         chunks = []
         current_chunk_text = ""
         current_heading = "Front Matter"
@@ -114,11 +124,13 @@ class FIHRulesEngine:
         return chunks
 
     def _contextualize_query(self, history, query):
+        """Rewrite the latest user message as a standalone query."""
         if not history: return query
         history_str = "\n".join([f"{role}: {txt}" for role, txt in history[-4:]])
         prompt = f"Rewrite to be standalone.\nHISTORY:\n{history_str}\nQUESTION: {query}"
         return self.llm.invoke(prompt).strip()
 
     def _route_query(self, query):
+        """Return 'outdoor' | 'indoor' | 'hockey5s' based on content."""
         prompt = f"Analyze Field Hockey question. Return 'outdoor', 'indoor', or 'hockey5s'. Default to 'outdoor'.\nQUESTION: {query}"
         return self.llm.invoke(prompt).strip().lower().replace("'", "").replace('"', "")
