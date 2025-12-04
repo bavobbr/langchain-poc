@@ -1,4 +1,12 @@
 import os
+try:
+    from dotenv import load_dotenv  # type: ignore
+except ImportError:
+    load_dotenv = None
+
+# Load environment variables from a local .env if present
+if load_dotenv:
+    load_dotenv()
 
 # Google Cloud & Infra
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "langchain-poc-479114")

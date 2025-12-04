@@ -13,3 +13,4 @@ sqlalchemy
 
 # Web App
 streamlit
+python-dotenv

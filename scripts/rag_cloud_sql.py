@@ -4,6 +4,7 @@ from langchain_google_vertexai import VertexAIEmbeddings, VertexAI
 from langchain_google_cloud_sql_pg import PostgresEngine, PostgresVectorStore
 from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain_core.documents import Document
+import config
 
 # --- CONFIGURATION ---
 PROJECT_ID = "langchain-poc-479114"
