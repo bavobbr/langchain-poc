@@ -16,7 +16,7 @@ This project is built on **Google Cloud Platform (GCP)** using a "Raw SQL" appro
 | **Ingestion** | **Unstructured.io** | Layout-aware PDF parsing (detects headers vs. content). |
 | **Embeddings** | **Vertex AI** | Uses `text-embedding-004` for vector generation. |
 | **Vector DB** | **Cloud SQL** | PostgreSQL 15 + `pgvector`. Accessed via **Raw SQL (`pg8000`)** for maximum control. |
-| **Reasoning** | **Gemini 1.5 Flash** | LLM for synthesis and legal reasoning. |
+| **Reasoning** | **Gemini 2.0 Flash Lite** | LLM for synthesis and legal reasoning. |
 | **Frontend** | **Streamlit** | Interactive web interface with Session State. |
 | **Hosting** | **Cloud Run** | Serverless container deployment (1GB RAM). |
 
@@ -36,7 +36,7 @@ sequenceDiagram
 
     Note over Engine: 2. Processing Phase
     App->>Engine: ingest_pdf(file, variant="indoor")
-    Engine->>Engine: Parse PDF (PDFPlumber)
+    Engine->>Engine: Parse PDF (UnstructuredPDFLoader)
     Engine->>Engine: Semantic Chunking (Regex)
 
     Note over Engine, DB: 3. Storage Phase
@@ -218,4 +218,4 @@ We moved from a monolithic script to a separation of concerns:
 ### 4. High-Recall Retrieval
 We utilize a `k=15` retrieval strategy.
 * **Why:** Legal queries often require synthesizing multiple rules (e.g., "Definition of Foul" + "Location Penalty").
-* **How:** We leverage Gemini 1.5's massive context window to retrieve a wider net of potential rules, allowing the LLM to filter noise and perform multi-hop reasoning.
+* **How:** We leverage Gemini 2.0 Flash Lite's context window to retrieve a wider net of potential rules, allowing the LLM to filter noise and perform multi-hop reasoning.
