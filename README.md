@@ -1,4 +1,4 @@
-# 🏑 FIH Rules AI Agent (RAG PoC)
+# FIH Rules AI Agent (RAG PoC)
 
 A Cloud-Native Retrieval-Augmented Generation (RAG) system designed to answer complex queries about **International Hockey Federation (FIH) Rules**.
 
@@ -6,7 +6,7 @@ Unlike generic "Chat with PDF" tools, this project implements **domain-specific 
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 This project is built on **Google Cloud Platform (GCP)** using a "Raw SQL" approach to bypass ORM limitations.
 
@@ -94,7 +94,7 @@ sequenceDiagram
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 We follow a modular **MVC + Repository** pattern:
 
@@ -111,7 +111,7 @@ We follow a modular **MVC + Repository** pattern:
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 * **Python 3.10+** installed locally.
@@ -175,7 +175,7 @@ streamlit run app.py
 
 ---
 
-## 🧩 Scripts Overview
+## Scripts Overview
 
 Quick utilities to debug and validate parts of the pipeline:
 
@@ -195,7 +195,7 @@ All scripts read configuration from `config.py` and `.env`.
 
 ---
 
-## ☁️ Deployment (Google Cloud Run)
+## Deployment (Google Cloud Run)
 
 To deploy the application as a public web service:
 
