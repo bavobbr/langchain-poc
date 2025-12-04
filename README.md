@@ -113,6 +113,12 @@ We follow a modular **MVC + Repository** pattern:
 
 ## Getting Started
 
+### OS Prerequisites (for PDF parsing)
+Install system packages required by Unstructured and PDF tooling:
+
+- macOS (Homebrew): `brew install poppler libmagic`
+- Debian/Ubuntu: `sudo apt-get update && sudo apt-get install -y poppler-utils libmagic1`
+
 ### 1. Prerequisites
 * **Python 3.10+** installed locally.
 * **Google Cloud CLI (`gcloud`)** installed and authenticated.
@@ -139,6 +145,11 @@ CLOUDSQL_INSTANCE=fih-rag-db
 ```
 
 Run as usual (no extra flags needed): `streamlit run app.py` or `python scripts/cloudsql_debug_schema.py`. The `.env` file is ignored by Git.
+
+Optional developer setup
+- Install dev tools: `make dev-install`
+- Install Git hooks: `make pre-commit-install`
+- Lint/format: `make lint` / `make fmt`
 
 ### 3. Infrastructure Setup (One-time)
 This project requires a Cloud SQL instance with the `pgvector` extension. Run these commands to provision the infrastructure:
@@ -192,6 +203,9 @@ Quick utilities to debug and validate parts of the pipeline:
   - `python scripts/cloudsql_truncate_table.py` – Danger: truncate the vector table.
 
 All scripts read configuration from `config.py` and `.env`.
+
+Note on large files
+- PDFs in `docs/` are tracked via Git LFS going forward. Install LFS with `git lfs install` for optimal cloning/pulling.
 
 ---
 

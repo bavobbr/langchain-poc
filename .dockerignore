@@ -1,0 +1,22 @@
+# Python/venv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.cache/
+
+# Git
+.git/
+
+# Local data
+chroma_db/
+docs/
+
+# OS/Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Node (if any tooling)
+node_modules/
+
