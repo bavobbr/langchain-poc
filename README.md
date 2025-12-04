@@ -127,6 +127,19 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### 2.1 Local Environment (.env)
+Create a `.env` file at the repo root to store local credentials and config. The app auto-loads it via `python-dotenv`:
+
+```ini
+DB_USER=postgres
+DB_PASS=your-strong-password
+GCP_PROJECT_ID=your-project-id
+GCP_REGION=europe-west1
+CLOUDSQL_INSTANCE=fih-rag-db
+```
+
+Run as usual (no extra flags needed): `streamlit run app.py` or `python scripts/debug_schema.py`. The `.env` file is ignored by Git.
+
 ### 3. Infrastructure Setup (One-time)
 This project requires a Cloud SQL instance with the `pgvector` extension. Run these commands to provision the infrastructure:
 
