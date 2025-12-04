@@ -175,6 +175,26 @@ streamlit run app.py
 
 ---
 
+## 🧩 Scripts Overview
+
+Quick utilities to debug and validate parts of the pipeline:
+
+- PDF tools
+  - `python scripts/pdf_compare_loaders.py` – Compare PyPDF, PDFPlumber, Unstructured.
+  - `python scripts/pdf_ingestion_preview.py` – Preview Unstructured ingestion and confirm LLM connectivity.
+  - `python scripts/pdf_chunk_preview.py` – Print rule-aware chunks extracted via PDFPlumber.
+- Chroma (local)
+  - `python scripts/chroma_debug_search.py` – Inspect similarity search results in a local Chroma DB.
+  - `python scripts/chroma_rag_pipeline.py` – Run a full RAG flow using Chroma (no Cloud SQL).
+- Cloud SQL (Postgres + pgvector)
+  - `python scripts/cloudsql_debug_schema.py` – Inspect table schema vs. library view.
+  - `python scripts/cloudsql_rag_pipeline.py` – Run a full RAG flow using Cloud SQL.
+  - `python scripts/cloudsql_truncate_table.py` – Danger: truncate the vector table.
+
+All scripts read configuration from `config.py` and `.env`.
+
+---
+
 ## ☁️ Deployment (Google Cloud Run)
 
 To deploy the application as a public web service:
