@@ -9,7 +9,7 @@ INSTANCE_NAME = os.getenv("CLOUDSQL_INSTANCE", "fih-rag-db")
 DATABASE_NAME = "hockey_db"
 TABLE_NAME = "hockey_rules_vectors"
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASS = os.getenv("DB_PASS", "StartWithStrongPassword123!")
+DB_PASS = os.getenv("DB_PASS")  # Required; do not set a default here
 
 # Model Config
 EMBEDDING_MODEL = "text-embedding-004"

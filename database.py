@@ -14,6 +14,11 @@ class PostgresVectorDB:
 
     def _get_conn(self):
         """Callback for SQLAlchemy to get a fresh, secure connection."""
+        # Fail fast if required secrets are missing
+        if not getattr(config, "DB_PASS", None):
+            raise RuntimeError("DB_PASS environment variable is required but not set.")
+        if not getattr(config, "DB_USER", None):
+            raise RuntimeError("DB_USER environment variable is required but not set.")
         return self.connector.connect(
             f"{config.PROJECT_ID}:{config.REGION}:{config.INSTANCE_NAME}",
             "pg8000",

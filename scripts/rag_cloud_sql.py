@@ -81,8 +81,8 @@ async def main():
         region=REGION,
         instance=INSTANCE_NAME,
         database=DATABASE_NAME,
-        user="postgres",           # <--- Force admin user
-        password="StartWithStrongPassword123!" # <--- Your password
+        user=config.DB_USER,
+        password=config.DB_PASS
     )
 
     # 3. Initialize/Create the Vector Table

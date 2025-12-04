@@ -142,7 +142,7 @@ gcloud sql instances create fih-rag-db \
     --database-version=POSTGRES_15 \
     --tier=db-f1-micro \
     --region=europe-west1 \
-    --root-password=StartWithStrongPassword123!
+    --root-password=YOUR_STRONG_PASSWORD
 
 # 2. Create Database & Enable IAM
 gcloud sql databases create hockey_db --instance=fih-rag-db
@@ -180,7 +180,7 @@ gcloud run deploy fih-rag-app \
     --region europe-west1 \
     --memory 1Gi \
     --allow-unauthenticated \
-    --set-env-vars="GCP_PROJECT_ID=YOUR_PROJECT_ID,CLOUDSQL_INSTANCE=fih-rag-db,DB_USER=postgres,DB_PASS=StartWithStrongPassword123!"
+    --set-env-vars="GCP_PROJECT_ID=YOUR_PROJECT_ID,CLOUDSQL_INSTANCE=fih-rag-db,DB_USER=postgres,DB_PASS=YOUR_DB_PASSWORD"
 ```
 
 ---
@@ -206,4 +206,3 @@ We moved from a monolithic script to a separation of concerns:
 We utilize a `k=15` retrieval strategy.
 * **Why:** Legal queries often require synthesizing multiple rules (e.g., "Definition of Foul" + "Location Penalty").
 * **How:** We leverage Gemini 1.5's massive context window to retrieve a wider net of potential rules, allowing the LLM to filter noise and perform multi-hop reasoning.
-
