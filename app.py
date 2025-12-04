@@ -1,0 +1,86 @@
+import traceback
+import streamlit as st
+import tempfile
+import config
+from rag_engine import FIHRulesEngine
+
+st.set_page_config(page_title="FIH Rules Expert", page_icon="🏑")
+st.title("🏑 FIH Rules AI Agent")
+
+# --- INITIALIZATION ---
+# --- INITIALIZATION ---
+@st.cache_resource
+def get_app_engine():
+    return FIHRulesEngine()
+
+try:
+    engine = get_app_engine()
+    st.success("✅ Connected to Cloud Knowledge Base")
+except Exception as e:
+    # 1. Show the simple error
+    st.error(f"Failed to initialize engine: {e}")
+    
+    # 2. Show the FULL technical trace in the UI
+    st.markdown("### Debug Traceback:")
+    st.exception(e)
+    
+    # 3. Print to Cloud Run Logs (Standard Output)
+    print("CRITICAL INITIALIZATION ERROR:")
+    print(traceback.format_exc())
+    
+    st.stop()
+
+# --- SIDEBAR: INGEST WITH VARIANT ---
+with st.sidebar:
+    st.header("📚 Knowledge Base")
+    
+    # NEW: Dropdown to select the variant
+    selected_variant = st.selectbox(
+        "Select Ruleset Variant",
+        options=list(config.VARIANTS.keys()),
+        format_func=lambda x: config.VARIANTS[x]
+    )
+    
+    uploaded_file = st.file_uploader("Upload Rules PDF", type="pdf")
+    
+    if uploaded_file and st.button("Ingest"):
+        with st.spinner(f"Indexing as {config.VARIANTS[selected_variant]}..."):
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp.write(uploaded_file.getvalue())
+                tmp_path = tmp.name
+            
+            # Pass the variant to the backend
+            count = engine.ingest_pdf(tmp_path, selected_variant)
+            st.success(f"Successfully indexed {count} rules for {selected_variant}!")
+
+# --- CHAT UI ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+if prompt := st.chat_input("Ask a question (e.g., 'What about indoor penalty corners?')..."):
+    st.chat_message("user").markdown(prompt)
+    
+    with st.chat_message("assistant"):
+        with st.spinner("Consulting the rulebook..."):
+            history_list = [(m["role"], m["content"]) for m in st.session_state.messages]
+            
+            # CALL ENGINE
+            result = engine.query(prompt, history=history_list)
+            
+            st.markdown(result["answer"])
+            
+            # NEW: Show which variant was routed
+            with st.expander("Debug: Routing & Sources"):
+                st.info(f"🚦 Router selected: **{result['variant'].upper()}**")
+                st.write(f"**Reformulated Query:** {result['standalone_query']}")
+                st.write("**Sources:**")
+                for doc in result["source_docs"]:
+                    st.caption(f"[{doc.metadata.get('variant', 'unknown')}] {doc.metadata.get('heading', 'Section')}")
+                    st.text(doc.page_content[:150] + "...")
+
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({"role": "assistant", "content": result["answer"]})

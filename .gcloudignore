@@ -1,0 +1,9 @@
+.gcloudignore
+.git
+.gitignore
+.venv/
+chroma_db/
+__pycache__/
+README.md
+docs/
+__pycache__/
