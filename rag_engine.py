@@ -8,7 +8,7 @@ from langchain_google_vertexai import VertexAIEmbeddings, VertexAI
 from langchain_core.documents import Document
 import config
 from database import PostgresVectorDB
-from loaders import UnstructuredLoader
+from loaders import DocumentAILoader
 
 class FIHRulesEngine:
     """High-level interface to embeddings, LLM, and vector DB."""
@@ -33,7 +33,7 @@ class FIHRulesEngine:
     def ingest_pdf(self, file_path, variant):
         """Parse a PDF, chunk, embed and persist under a ruleset variant."""
         # Delegate to Loader
-        loader = UnstructuredLoader()
+        loader = DocumentAILoader()
         docs = loader.load_and_chunk(file_path, variant)
         
         # Embed

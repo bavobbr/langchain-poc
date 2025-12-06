@@ -18,6 +18,11 @@ if load_dotenv:
 # Google Cloud & Infra
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "langchain-poc-479114")
 REGION = os.getenv("GCP_REGION", "europe-west1")
+# Document AI (US Fallback)
+DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "53a6fece2d33c37")
+DOCAI_LOCATION = os.getenv("DOCAI_LOCATION", "us")
+# Staging bucket for Document AI
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "fih-rag-staging-us-langchain-poc-479114")
 
 # Database (Cloud SQL Postgres)
 INSTANCE_NAME = os.getenv("CLOUDSQL_INSTANCE", "fih-rag-db")

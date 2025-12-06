@@ -3,6 +3,7 @@
 .gitignore
 .venv/
 chroma_db/
+debug_output/
 __pycache__/
 README.md
 docs/

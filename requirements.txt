@@ -4,6 +4,8 @@ langchain-community
 langchain-core<1.0.0
 unstructured[pdf]
 pdfplumber
+google-cloud-documentai
+google-cloud-storage
 
 # Database Drivers (The "Raw SQL" Stack)
 cloud-sql-python-connector[pg8000]

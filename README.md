@@ -143,6 +143,9 @@ DB_PASS=your-strong-password
 GCP_PROJECT_ID=your-project-id
 GCP_REGION=europe-west1
 CLOUDSQL_INSTANCE=fih-rag-db
+DOCAI_LOCATION=us
+DOCAI_PROCESSOR_ID=your-processor-id
+GCS_BUCKET_NAME=your-staging-bucket
 ```
 
 Run as usual (no extra flags needed): `streamlit run app.py` or `python scripts/cloudsql_debug_schema.py`. The `.env` file is ignored by Git.
@@ -247,7 +250,9 @@ Raw user queries often lack context (e.g., "What if it was accidental?").
 ### 3. Modular Architecture (MVC)
 We moved from a monolithic script to a separation of concerns:
 * **`rag_engine.py` (Controller):** Handles pure Python logic (Database, Vertex AI, Chunking).
-* **`loaders/`:** Handles document ingestion strategies (Unstructured, Document AI).
+* **`loaders/`:** Handles document ingestion strategies:
+    * **`UnstructuredLoader`:** Legacy local parser.
+    * **`DocumentAILoader`:** Uses Google Cloud Document AI. Implements a "Sharding Strategy" (Split PDF -> Online Process -> Merge) to bypass complexity and GCS permissions.
 * **`app.py` (View):** Handles strictly UI rendering and State Management.
 * **`config.py`:** Centralizes configuration management.
 
@@ -255,3 +260,8 @@ We moved from a monolithic script to a separation of concerns:
 We utilize a `k=15` retrieval strategy.
 * **Why:** Legal queries often require synthesizing multiple rules (e.g., "Definition of Foul" + "Location Penalty").
 * **How:** We leverage Gemini 2.0 Flash Lite's context window to retrieve a wider net of potential rules, allowing the LLM to filter noise and perform multi-hop reasoning.
+
+### 5. Document AI "Sharding"
+To avoid the complexity of Asynchronous Batch Processing (and associated IAM delays), we implemented a **Synchronous Online Processing** strategy for PDFs.
+*   **The Constraint:** Online processing has a 15-page limit per request.
+*   **The Solution:** The `DocumentAILoader` automatically splits large PDFs (client-side) into 15-page chunks, sends them to the API in parallel/series, and stitches the text back together. This provides a robust, zero-infrastructure-change ingestion path.

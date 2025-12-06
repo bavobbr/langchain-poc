@@ -2,7 +2,7 @@
 import os
 from langchain_google_vertexai import VertexAI
 from langchain_google_vertexai import VertexAI
-from loaders import UnstructuredLoader
+from loaders import DocumentAILoader
 
 # --- CONFIGURATION ---
 # If you authenticated via `gcloud auth application-default login`, 
@@ -43,20 +43,20 @@ def ingest_pdf_preview(file_path):
         print(f"❌ ERROR: File not found at {file_path}")
         return
 
-    # UnstructuredLoader now handles parsing AND chunking internally
-    loader = UnstructuredLoader()
+    # DocumentAILoader handles GCS upload + Batch Processing + Parsing
+    loader = DocumentAILoader()
     
     try:
         # Note: In the new interface, we pass a variant. For preview, "preview" is fine.
         docs = loader.load_and_chunk(file_path, variant="preview")
-        print(f"✅ SUCCESS! Parsed {len(docs)} chunks from the PDF.")
+        print(f"✅ SUCCESS! Parsed {len(docs)} chunks from the PDF (via Document AI).")
         
         print("\n--- PREVIEW (First 5 Chunks) ---")
         for i, doc in enumerate(docs[:5]):
             print(f"[{i}] Heading: {doc.metadata.get('heading')} | Content: {doc.page_content[:100]}...")
             
     except Exception as e:
-        print(f"❌ ERROR: Parsing failed. Do you have 'poppler' installed?\n{e}")
+        print(f"❌ ERROR: Parsing failed.\n{e}")
 
 if __name__ == "__main__":
     # 1. Test LLM
