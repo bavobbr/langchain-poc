@@ -101,6 +101,7 @@ We follow a modular **MVC + Repository** pattern:
 ```text
 .
 ├── app.py                 # (View) Streamlit UI & Session State
+├── loaders/               # (New) Document Ingestion Strategy Pattern
 ├── rag_engine.py          # (Controller) Orchestrates AI, Chunking, and Context logic
 ├── database.py            # (Model/Repository) Raw SQL handling & DB Connections
 ├── config.py              # Configuration & Constants
@@ -246,6 +247,7 @@ Raw user queries often lack context (e.g., "What if it was accidental?").
 ### 3. Modular Architecture (MVC)
 We moved from a monolithic script to a separation of concerns:
 * **`rag_engine.py` (Controller):** Handles pure Python logic (Database, Vertex AI, Chunking).
+* **`loaders/`:** Handles document ingestion strategies (Unstructured, Document AI).
 * **`app.py` (View):** Handles strictly UI rendering and State Management.
 * **`config.py`:** Centralizes configuration management.
 

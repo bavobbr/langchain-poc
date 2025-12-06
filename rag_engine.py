@@ -5,11 +5,10 @@ Provides ingestion (chunking + embeddings + persistence) and query handling
 """
 
 from langchain_google_vertexai import VertexAIEmbeddings, VertexAI
-from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain_core.documents import Document
 import config
-import re
 from database import PostgresVectorDB
+from loaders import UnstructuredLoader
 
 class FIHRulesEngine:
     """High-level interface to embeddings, LLM, and vector DB."""
@@ -33,9 +32,10 @@ class FIHRulesEngine:
     # Ingestion
     def ingest_pdf(self, file_path, variant):
         """Parse a PDF, chunk, embed and persist under a ruleset variant."""
-        # Parse & chunk
-        loader = UnstructuredPDFLoader(file_path, mode="elements")
-        docs = self._smarter_chunking(loader.load(), variant)
+        # Delegate to Loader
+        loader = UnstructuredLoader()
+        docs = loader.load_and_chunk(file_path, variant)
+        
         # Embed
         print(f"   Generating embeddings for {len(docs)} chunks...")
         texts = [d.page_content for d in docs]
@@ -91,37 +91,6 @@ class FIHRulesEngine:
             "variant": detected_variant,
             "source_docs": docs
         }
-
-    # Helpers (pure logic)
-    def _smarter_chunking(self, elements, variant):
-        """Aggregate PDF elements into rule-aware chunks with headings.
-
-        Uses a regex for rule numbers (e.g., 9.12) and compact section titles,
-        skipping page numbers (>20) and merging short "lonely" headers.
-        """
-        chunks = []
-        current_chunk_text = ""
-        current_heading = "Front Matter"
-        header_pattern = re.compile(r'^((Rule\s+)?([1-9]|1[0-9])(\.\d+)+|Rule\s+\d+)$', re.IGNORECASE)
-        section_pattern = re.compile(r'^[A-Z\s]{4,}$')
-
-        for el in elements:
-            text = el.page_content.strip()
-            if len(text) < 2 or (text.isdigit() and int(text) > 20): continue
-            
-            if header_pattern.match(text) or (section_pattern.match(text) and len(text) < 50):
-                if len(current_chunk_text) < 20:
-                    current_heading = f"{current_heading} > {text}"
-                    current_chunk_text += f" {text}"
-                    continue
-                chunks.append(Document(page_content=current_chunk_text, metadata={"source": "PDF", "heading": current_heading, "variant": variant}))
-                current_heading = text
-                current_chunk_text = text + " "
-            else:
-                current_chunk_text += f"\n{text}"
-        if current_chunk_text:
-            chunks.append(Document(page_content=current_chunk_text, metadata={"source": "PDF", "heading": current_heading, "variant": variant}))
-        return chunks
 
     def _contextualize_query(self, history, query):
         """Rewrite the latest user message as a standalone query."""

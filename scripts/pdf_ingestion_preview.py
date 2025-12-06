@@ -1,7 +1,8 @@
 """Preview Unstructured PDF ingestion and a simple Vertex AI smoke test."""
 import os
 from langchain_google_vertexai import VertexAI
-from langchain_community.document_loaders import UnstructuredPDFLoader
+from langchain_google_vertexai import VertexAI
+from loaders import UnstructuredLoader
 
 # --- CONFIGURATION ---
 # If you authenticated via `gcloud auth application-default login`, 
@@ -42,18 +43,17 @@ def ingest_pdf_preview(file_path):
         print(f"❌ ERROR: File not found at {file_path}")
         return
 
-    # Unstructured reads the visual layout, not just the raw text stream.
-    # 'elements' mode breaks it down into Title, NarrativeText, Table, etc.
-    loader = UnstructuredPDFLoader(file_path, mode="elements")
+    # UnstructuredLoader now handles parsing AND chunking internally
+    loader = UnstructuredLoader()
     
     try:
-        docs = loader.load()
-        print(f"✅ SUCCESS! Parsed {len(docs)} elements from the PDF.")
+        # Note: In the new interface, we pass a variant. For preview, "preview" is fine.
+        docs = loader.load_and_chunk(file_path, variant="preview")
+        print(f"✅ SUCCESS! Parsed {len(docs)} chunks from the PDF.")
         
-        print("\n--- PREVIEW (First 5 Elements) ---")
+        print("\n--- PREVIEW (First 5 Chunks) ---")
         for i, doc in enumerate(docs[:5]):
-            # 'category' tells us if it's a Title, NarrativeText, etc.
-            print(f"[{i}] Type: {doc.metadata.get('category')} | Content: {doc.page_content[:100]}...")
+            print(f"[{i}] Heading: {doc.metadata.get('heading')} | Content: {doc.page_content[:100]}...")
             
     except Exception as e:
         print(f"❌ ERROR: Parsing failed. Do you have 'poppler' installed?\n{e}")
