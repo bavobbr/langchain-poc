@@ -26,24 +26,17 @@ class DocumentAILoader(BaseLoader):
     def load_and_chunk(self, file_path: str, variant: str) -> List[Document]:
         print(f" -> [DocAI] 1. Analyzing {file_path} for splitting...")
         
-        # New Strategy: Online Processing with Client-Side Sharding
-        # This avoids GCS permission issues and is faster for < 100 pages.
-        full_text = self._process_with_splitting(file_path)
+        # Generator of Document AI Objects (Shards)
+        docai_shards = self._process_with_splitting_structural(file_path)
         
-        print(f" -> [DocAI] 2. Chunking merged text ({len(full_text)} chars)...")
-        
-        # Create a dummy DocAI object to reuse existing chunker signature
-        dummy_doc = documentai.Document()
-        dummy_doc.text = full_text
-        
-        return self._smart_chunking(dummy_doc, variant)
+        print(f" -> [DocAI] 2. Structural Chunking...")
+        return self._layout_chunking(docai_shards, variant)
 
-    def _process_with_splitting(self, file_path: str) -> str:
-        """Splits PDF into 15-page chunks and processes them synchronously."""
+    def _process_with_splitting_structural(self, file_path: str):
+        """Splits PDF and yields Document AI objects."""
         reader = PdfReader(file_path)
         total_pages = len(reader.pages)
         chunk_size = 15
-        full_text = ""
         
         print(f"    - Found {total_pages} pages. Splitting into {chunk_size}-page chunks.")
         
@@ -58,15 +51,12 @@ class DocumentAILoader(BaseLoader):
             writer.write(chunk_buffer)
             chunk_content = chunk_buffer.getvalue()
             
-            # 2. Process Chunk Online
-            print(f"    - Processing Chunk {i//chunk_size + 1}/{total_pages//chunk_size + 1} (Pages {i}-{end})...")
-            text = self._online_process(chunk_content)
-            full_text += text + "\n"
-            
-        return full_text
+            # 2. Process to Object
+            print(f"    - Processing Chunk {i//chunk_size + 1}/{total_pages//chunk_size + 1}...")
+            yield self._online_process_structural(chunk_content)
 
-    def _online_process(self, file_content: bytes) -> str:
-        """Calls Document AI Online Processing."""
+    def _online_process_structural(self, file_content: bytes) -> documentai.Document:
+        """Calls Document AI Online Processing and returns full object."""
         name = self.docai_client.processor_path(self.project_id, self.location, self.processor_id)
         
         raw_document = documentai.RawDocument(content=file_content, mime_type="application/pdf")
@@ -74,51 +64,78 @@ class DocumentAILoader(BaseLoader):
         
         try:
             result = self.docai_client.process_document(request=request)
-            return result.document.text
+            return result.document
         except Exception as e:
             print(f"    ❌ Chunk failed: {e}")
-            return ""
+            return documentai.Document()
+
+    # Combined into _process_with_splitting_structural
 
     # Removed _upload_to_gcs, _batch_process, _get_results
 
-    def _smart_chunking(self, docai_doc: documentai.Document, variant: str) -> List[Document]:
-        """Adaptation of the regex chunker for Document AI's full text output."""
+    def _layout_chunking(self, docai_shards, variant: str) -> List[Document]:
+        """Hybrid Chunker: Iterates visually sorted blocks."""
         chunks = []
         current_chunk_text = ""
         current_heading = "Front Matter"
         
-        # Reuse existing regex
         header_pattern = re.compile(r'^((Rule\s+)?([1-9]|1[0-9])(\.\d+)+|Rule\s+\d+)$', re.IGNORECASE)
-        section_pattern = re.compile(r'^[A-Z\s]{4,}$')
         
-        # Document AI text is one giant string with \n. 
-        # We process line by line.
-        lines = docai_doc.text.split("\n")
-        
-        for line in lines:
-            text = line.strip()
-            # Heuristics
-            if len(text) < 2 or (text.isdigit() and int(text) > 20): continue
+        for shard in docai_shards:
+            if not shard.pages: continue
             
-            if header_pattern.match(text) or (section_pattern.match(text) and len(text) < 50):
-                if len(current_chunk_text) < 20:
-                    current_heading = f"{current_heading} > {text}"
-                    current_chunk_text += f" {text}"
-                    continue
-                    
-                chunks.append(Document(
-                    page_content=current_chunk_text,
-                    metadata={"source": "PDF (DocAI)", "heading": current_heading, "variant": variant}
-                ))
-                current_heading = text
-                current_chunk_text = text + " "
-            else:
-                current_chunk_text += f"\n{text}"
+            for page in shard.pages:
+                # 1. Extract and Visual Sort
+                # Document AI sometimes returns Column-Major order (Left Col top-down, then Right Col).
+                # We want Row-Major (Top-down across columns).
+                blocks_with_coords = []
+                for block in page.blocks:
+                    # Get Y coordinate (Top Left)
+                    poly = block.layout.bounding_poly
+                    # Default to 0 if no geo info
+                    y = poly.normalized_vertices[0].y if poly.normalized_vertices else 0
+                    x = poly.normalized_vertices[0].x if poly.normalized_vertices else 0
+                    blocks_with_coords.append((block, y, x))
                 
+                # Sort by Y (rounded to 2 decimal places ~1% page height fuzziness), then X
+                # This groups "1.1" (Y=0.2) and "Text..." (Y=0.21) together before "1.2" (Y=0.3)
+                blocks_with_coords.sort(key=lambda item: (round(item[1], 3), item[2]))
+                
+                # 2. Iterate Sorted Blocks
+                for block, _, _ in blocks_with_coords:
+                    block_text = self._get_text(shard, block.layout.text_anchor).strip()
+                    if not block_text: continue
+                    
+                    # Normalization
+                    if len(block_text) < 2 and not block_text[0].isdigit(): continue
+
+                    # Hybrid Logic
+                    if header_pattern.match(block_text):
+                        if len(current_chunk_text) > 20: 
+                            chunks.append(Document(
+                                page_content=current_chunk_text.strip(),
+                                metadata={"source": "PDF (DocAI-Layout)", "heading": current_heading, "variant": variant}
+                            ))
+                        
+                        current_heading = block_text
+                        current_chunk_text = block_text + " "
+                    else:
+                        current_chunk_text += block_text + "\n"
+        
+        # Flush last
         if current_chunk_text:
-            chunks.append(Document(
-                page_content=current_chunk_text,
-                metadata={"source": "PDF (DocAI)", "heading": current_heading, "variant": variant}
+             chunks.append(Document(
+                page_content=current_chunk_text.strip(),
+                metadata={"source": "PDF (DocAI-Layout)", "heading": current_heading, "variant": variant}
             ))
             
         return chunks
+
+    def _get_text(self, document: documentai.Document, text_anchor: documentai.Document.TextAnchor) -> str:
+        """Helper to extract text from a specific anchor."""
+        text = ""
+        for segment in text_anchor.text_segments:
+            start_index = int(segment.start_index)
+            end_index = int(segment.end_index)
+            text += document.text[start_index:end_index]
+        return text
