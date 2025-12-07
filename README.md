@@ -285,3 +285,36 @@ To prevent the LLM from hallucinating constraints or mixing up "Umpiring" rules 
 
 ### 8. AI-Generated Summaries
 We enrich each chunk with a **concise, AI-generated summary** (max 15 words) during ingestion. This "human-readable label" (e.g., "Umpires must remain neutral") allows the system to present search results that are immediately understandable to users, rather than just listing opaque rule numbers like "1.2".
+
+---
+
+## Cloud Run IAM Preflight (Batch Mode)
+
+When running on Cloud Run with `DOCAI_INGESTION_MODE=batch`, both your Cloud Run
+service account and the Document AI service agent must access the staging GCS bucket
+(`GCS_BUCKET_NAME`). If ingestion fails with a 403 on `storage.objects.get`, run
+the preflight and verify IAM:
+
+1) Run preflight (locally with ADC or within the service):
+
+```bash
+python -m scripts.cloudrun_preflight
+```
+
+2) Grant required IAM (replace placeholders):
+
+```bash
+# Cloud Run service account → GCS bucket
+gsutil iam ch serviceAccount:<RUN_SA_EMAIL>:roles/storage.objectAdmin gs://<BUCKET>
+
+# Document AI service agent → GCS bucket
+gsutil iam ch serviceAccount:service-<PROJECT_NUMBER>@gcp-sa-documentai.iam.gserviceaccount.com:roles/storage.objectAdmin gs://<BUCKET>
+
+# Cloud Run service account → Document AI API
+gcloud projects add-iam-policy-binding <PROJECT_ID> \
+  --member=serviceAccount:<RUN_SA_EMAIL> --role=roles/documentai.apiUser
+```
+
+Tips:
+- Keep `DOCAI_LOCATION` aligned to your processor and prefer an EU bucket when using `eu`.
+- To bypass GCS IAM entirely, deploy with `--set-env-vars=DOCAI_INGESTION_MODE=online`.

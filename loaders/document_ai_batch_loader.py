@@ -71,32 +71,52 @@ class DocumentAIBatchLoader(BaseLoader, DocumentAILayoutMixin):
         return f"gs://{self.gcs_bucket_name}/{blob_name}"
 
     def _batch_process(self, gcs_input_uri: str):
-        """Submits async Batch Process."""
+        """Submits async Batch Process.
+
+        Wraps the API call to surface actionable IAM guidance when running on
+        Cloud Run with insufficient permissions on the staging GCS bucket or
+        Document AI. This preserves the original behavior locally while
+        improving diagnostics in managed environments.
+        """
         # Output info
         destination_uri = f"{gcs_input_uri.replace('uploads/', 'processed/')}/"
-        
-        # Check permission helper if needed (we assume setup is done)
-        
+
         # API Config
         name = self.docai_client.processor_path(self.project_id, self.location, self.processor_id)
-        
+
         input_config = documentai.BatchDocumentsInputConfig(
             gcs_documents=documentai.GcsDocuments(
                 documents=[{"gcs_uri": gcs_input_uri, "mime_type": "application/pdf"}]
             )
         )
-        
+
         output_config = documentai.DocumentOutputConfig(
             gcs_output_config={"gcs_uri": destination_uri}
         )
-        
+
         request = documentai.BatchProcessRequest(
             name=name,
             input_documents=input_config,
             document_output_config=output_config,
         )
-        
-        return self.docai_client.batch_process_documents(request=request)
+
+        try:
+            return self.docai_client.batch_process_documents(request=request)
+        except Exception as e:
+            # Common case on Cloud Run: either the Cloud Run Service Account or
+            # the Document AI service agent lacks GCS permissions.
+            bucket = self.gcs_bucket_name
+            guidance = (
+                "Document AI batch call failed. Likely IAM on GCS bucket or Document AI.\n"
+                f"  - Bucket: gs://{bucket}\n"
+                f"  - Project: {self.project_id}\n"
+                f"  - Location: {self.location}\n\n"
+                "Grant required roles (replace <RUN_SA> and <PROJECT_NUMBER>):\n"
+                f"  • Cloud Run SA → bucket: gsutil iam ch serviceAccount:<RUN_SA>:roles/storage.objectAdmin gs://{bucket}\n"
+                f"  • DocAI service agent → bucket: gsutil iam ch serviceAccount:service-<PROJECT_NUMBER>@gcp-sa-documentai.iam.gserviceaccount.com:roles/storage.objectAdmin gs://{bucket}\n"
+                "  • Cloud Run SA → Document AI: gcloud projects add-iam-policy-binding <PROJECT_ID> \\\n+  --member=serviceAccount:<RUN_SA> --role=roles/documentai.apiUser\n"
+            )
+            raise RuntimeError(f"batch_process_documents error: {e}\n\n{guidance}")
 
     def _get_results(self, gcs_input_uri: str, op_id: str) -> List[documentai.Document]:
         """Downloads the JSON output from GCS."""
@@ -111,7 +131,16 @@ class DocumentAIBatchLoader(BaseLoader, DocumentAILayoutMixin):
         prefix = f"{prefix}/{op_id}/"
         
         bucket = self.storage_client.bucket(self.gcs_bucket_name)
-        blobs = list(bucket.list_blobs(prefix=prefix))
+        try:
+            blobs = list(bucket.list_blobs(prefix=prefix))
+        except Exception as e:
+            guidance = (
+                "Unable to list Document AI outputs in GCS.\n"
+                f"  - Bucket: gs://{self.gcs_bucket_name}\n"
+                f"  - Prefix: {prefix}\n\n"
+                f"Ensure Cloud Run service account has roles/storage.objectViewer or objectAdmin on the bucket.\n"
+            )
+            raise RuntimeError(f"list_blobs error: {e}\n\n{guidance}")
         
         results = []
         for blob in blobs:
