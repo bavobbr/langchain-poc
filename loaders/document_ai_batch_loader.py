@@ -36,8 +36,11 @@ class DocumentAIBatchLoader(BaseLoader, DocumentAILayoutMixin):
         # Wait for operation
         operation.result(timeout=300)
         
-        print(f" -> [DocAI Batch] 4. Downloading Results...")
-        docai_shards = self._get_results(gcs_uri)
+        # Extract Operation ID from name: projects/.../operations/123456...
+        op_id = operation.operation.name.split("/")[-1]
+        
+        print(f" -> [DocAI Batch] 4. Downloading Results (Operation: {op_id})...")
+        docai_shards = self._get_results(gcs_uri, op_id)
         
         print(f" -> [DocAI Batch] 5. Structural Chunking...")
         chunks = self._layout_chunking(docai_shards, variant)
@@ -95,15 +98,17 @@ class DocumentAIBatchLoader(BaseLoader, DocumentAILayoutMixin):
         
         return self.docai_client.batch_process_documents(request=request)
 
-    def _get_results(self, gcs_input_uri: str) -> List[documentai.Document]:
+    def _get_results(self, gcs_input_uri: str, op_id: str) -> List[documentai.Document]:
         """Downloads the JSON output from GCS."""
-        # The output path matches the input structure
+        # The output path matched the input structure
         # destination_uri was gs://bucket/processed/filename.pdf/
         # DocAI appends an ID to the folder: destination_uri + <id>/...
-        # Simpler approach: List blobs in the parent directory
         
         prefix = gcs_input_uri.replace("gs://", "").split("/", 1)[1]
         prefix = prefix.replace("uploads/", "processed/")
+        
+        # Append operation ID to target specific run
+        prefix = f"{prefix}/{op_id}/"
         
         bucket = self.storage_client.bucket(self.gcs_bucket_name)
         blobs = list(bucket.list_blobs(prefix=prefix))
