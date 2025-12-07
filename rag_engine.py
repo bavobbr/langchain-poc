@@ -48,9 +48,10 @@ class FIHRulesEngine:
         # Embed
         print(f"   Generating embeddings for {len(docs)} chunks...")
         texts = [d.page_content for d in docs]
+        metadatas = [d.metadata for d in docs]
         vectors = self.embeddings.embed_documents(texts)
         # Persist
-        self.db.insert_batch(texts, vectors, variant)
+        self.db.insert_batch(texts, vectors, variant, metadatas=metadatas)
         
         return len(docs)
 
@@ -69,10 +70,26 @@ class FIHRulesEngine:
         results = self.db.search(query_vector, detected_variant, k=config.RETRIEVAL_K)
         
         # Convert DB results back to LangChain Documents for consistency
-        docs = [Document(page_content=r["content"], metadata={"variant": r["variant"]}) for r in results]
+        docs = [Document(page_content=r["content"], metadata=r["metadata"]) for r in results]
         
         # Synthesize answer
-        context_text = "\n\n".join([d.page_content for d in docs])
+        context_pieces = []
+        for d in docs:
+            meta = d.metadata
+            # Fallback values if metadata is empty/legacy
+            heading = meta.get("heading", "Reference")
+            chapter = meta.get("chapter", "")
+            section = meta.get("section", "")
+            
+            # Construct Citation Header
+            # e.g. [Rule 9.12] (Context: PLAYING THE GAME > Field of Play)
+            context_string = f"[{heading}]"
+            if chapter or section:
+                context_string += f" (Context: {chapter} > {section})"
+            
+            context_pieces.append(f"{context_string}\n{d.page_content}")
+
+        context_text = "\n\n".join(context_pieces)
         
         if not context_text:
             return {

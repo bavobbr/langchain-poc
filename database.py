@@ -40,31 +40,63 @@ class PostgresVectorDB:
         )
 
     def _init_schema(self):
-        """Ensure the pgvector extension exists (idempotent)."""
+        """Ensure the table exists and has the correct schema (Self-Healing)."""
+        table_name = config.TABLE_NAME
         with self.pool.connect() as conn:
+            # 1. Enable Extension
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            
+            # 2. Create Table (if not exists)
+            # We add 'metadata' as JSONB.
+            conn.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    id SERIAL PRIMARY KEY,
+                    content TEXT NOT NULL,
+                    embedding vector(768),
+                    variant TEXT,
+                    metadata JSONB DEFAULT '{{}}'::jsonb
+                );
+            """))
+            
+            # 3. Alter Table (Self-Healing for existing tables)
+            # Check if metadata column exists, if not, add it.
+            # This handles the migration for your existing empty table.
+            check_col = text(f"""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name='{table_name}' AND column_name='metadata';
+            """)
+            if not conn.execute(check_col).scalar():
+                print(f"⚠️  Migrating schema: Adding 'metadata' column to {table_name}...")
+                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN metadata JSONB DEFAULT '{{}}'::jsonb;"))
+            
             conn.commit()
 
-    def insert_batch(self, contents, vectors, variant):
-        """Insert a batch of text chunks and their embeddings.
+    def insert_batch(self, contents, vectors, variant, metadatas=None):
+        """Insert a batch of text chunks, embeddings, and metadata.
 
         contents: list[str] — raw text chunks
-        vectors: list[list[float]] — embedding vectors (same length as contents)
-        variant: str — ruleset label stored alongside the content
+        vectors: list[list[float]] — embedding vectors
+        variant: str — ruleset label
+        metadatas: list[dict] — optional metadata (heading, source, etc.)
         """
+        if metadatas is None:
+            # Default empty dicts if not provided
+            metadatas = [{} for _ in contents]
+            
         data = []
-        for content, vector in zip(contents, vectors):
-            # pg8000 requires the vector to be a string format like '[0.1, 0.2...]'
+        for content, vector, meta in zip(contents, vectors, metadatas):
             data.append({
                 "content": content,
                 "embedding": str(vector),
-                "variant": variant
+                "variant": variant,
+                "metadata": import_json_dump(meta) # Helper to stringify JSON
             })
 
         with self.pool.connect() as conn:
             stmt = text(f"""
-                INSERT INTO {config.TABLE_NAME} (content, embedding, variant)
-                VALUES (:content, :embedding, :variant)
+                INSERT INTO {config.TABLE_NAME} (content, embedding, variant, metadata)
+                VALUES (:content, :embedding, :variant, :metadata)
             """)
             conn.execute(stmt, data)
             conn.commit()
@@ -77,10 +109,10 @@ class PostgresVectorDB:
             conn.commit()
 
     def search(self, query_vector, variant, k=15):
-        """Return top-k similar chunks for a variant using <=> distance."""
+        """Return top-k similar chunks + metadata for a variant."""
         with self.pool.connect() as conn:
             stmt = text(f"""
-                SELECT content, variant
+                SELECT content, variant, metadata
                 FROM {config.TABLE_NAME}
                 WHERE variant = :variant
                 ORDER BY embedding <=> :vector
@@ -93,5 +125,13 @@ class PostgresVectorDB:
                 "k": k
             })
             
-            # Unpack results into a clean list of dicts or tuples
-            return [{"content": row[0], "variant": row[1]} for row in result]
+            # Unpack results
+            # row[0]=content, row[1]=variant, row[2]=metadata (dict)
+            return [
+                {"content": row[0], "variant": row[1], "metadata": row[2]} 
+                for row in result
+            ]
+
+import json
+def import_json_dump(d):
+    return json.dumps(d)
