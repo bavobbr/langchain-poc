@@ -19,10 +19,10 @@ if load_dotenv:
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "langchain-poc-479114")
 REGION = os.getenv("GCP_REGION", "europe-west1")
 # Document AI (US Fallback)
-DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "53a6fece2d33c37")
-DOCAI_LOCATION = os.getenv("DOCAI_LOCATION", "us")
+DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "2699879b692a67f")
+DOCAI_LOCATION = os.getenv("DOCAI_LOCATION", "eu")
 # Staging bucket for Document AI
-GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "fih-rag-staging-us-langchain-poc-479114")
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "fih-rag-staging-langchain-poc-479114")
 DOCAI_INGESTION_MODE = os.getenv("DOCAI_INGESTION_MODE", "online").lower() # 'online' or 'batch'
 
 # Database (Cloud SQL Postgres)
