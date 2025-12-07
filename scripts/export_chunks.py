@@ -1,6 +1,6 @@
 import os
 import sys
-from loaders.document_ai_loader import DocumentAILoader
+import loaders
 import json
 
 # Config
@@ -11,7 +11,7 @@ def export_chunks():
     print(f"--- Exporting Chunks from {INPUT_PDF} ---")
     
     # 1. Initialize Loader
-    loader = DocumentAILoader()
+    loader = loaders.get_document_ai_loader()
     
     # 2. Run Ingestion (This triggers the full DocAI pipeline)
     print("Running DocumentAILoader...")

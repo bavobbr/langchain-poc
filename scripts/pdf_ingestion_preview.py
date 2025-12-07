@@ -2,7 +2,7 @@
 import os
 from langchain_google_vertexai import VertexAI
 from langchain_google_vertexai import VertexAI
-from loaders import DocumentAILoader
+import loaders
 
 # --- CONFIGURATION ---
 # If you authenticated via `gcloud auth application-default login`, 
@@ -44,7 +44,7 @@ def ingest_pdf_preview(file_path):
         return
 
     # DocumentAILoader handles GCS upload + Batch Processing + Parsing
-    loader = DocumentAILoader()
+    loader = loaders.get_document_ai_loader()
     
     try:
         # Note: In the new interface, we pass a variant. For preview, "preview" is fine.

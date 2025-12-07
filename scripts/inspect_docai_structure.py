@@ -1,6 +1,6 @@
 import os
 import sys
-from loaders.document_ai_loader import DocumentAILoader
+import loaders
 
 # Config
 INPUT_PDF = "docs/fih-rules-of-hockey-June23-update.pdf"
@@ -9,7 +9,7 @@ OUTPUT_FILE = "debug_output/docai_structure_dump.txt"
 def inspect_structure():
     print(f"--- Inspecting Document AI Structure for {INPUT_PDF} ---")
     
-    loader = DocumentAILoader()
+    loader = loaders.get_document_ai_loader()
     
     # Use the internal splitter to get just the first shard (first 15 pages)
     # This avoids processing the whole file just for debugging

@@ -8,7 +8,7 @@ from langchain_google_vertexai import VertexAIEmbeddings, VertexAI
 from langchain_core.documents import Document
 import config
 from database import PostgresVectorDB
-from loaders import DocumentAILoader
+import loaders
 
 class FIHRulesEngine:
     """High-level interface to embeddings, LLM, and vector DB."""
@@ -32,9 +32,14 @@ class FIHRulesEngine:
     # Ingestion
     def ingest_pdf(self, file_path, variant):
         """Parse a PDF, chunk, embed and persist under a ruleset variant."""
-        # Delegate to Loader
-        loader = DocumentAILoader()
-        docs = loader.load_and_chunk(file_path, variant)
+        # 2. Ingest
+        # Dynamically load the configured loader (Online vs Batch)
+        docai_loader = loaders.get_document_ai_loader()
+        docs = docai_loader.load_and_chunk(file_path, variant)
+
+        if not docs:
+            print("   ⚠️ No chunks generated!")
+            return 0
         
         # Embed
         print(f"   Generating embeddings for {len(docs)} chunks...")
