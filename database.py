@@ -108,6 +108,13 @@ class PostgresVectorDB:
             conn.execute(stmt, {"variant": variant})
             conn.commit()
 
+    def variant_exists(self, variant) -> bool:
+        """Check if any data exists for the given variant."""
+        with self.pool.connect() as conn:
+            stmt = text(f"SELECT 1 FROM {config.TABLE_NAME} WHERE variant = :variant LIMIT 1")
+            result = conn.execute(stmt, {"variant": variant}).scalar()
+            return result is not None
+
     def search(self, query_vector, variant, k=15):
         """Return top-k similar chunks + metadata for a variant."""
         with self.pool.connect() as conn:

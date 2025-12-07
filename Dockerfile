@@ -20,12 +20,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY *.py ./
+COPY loaders ./loaders
 
 # Expose Streamlit port
 EXPOSE 8080
 
 # Environment variables (Defaults - can be overridden in Cloud Run)
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 # Command to run the app
 CMD ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]

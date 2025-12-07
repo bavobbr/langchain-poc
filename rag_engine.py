@@ -32,6 +32,11 @@ class FIHRulesEngine:
     # Ingestion
     def ingest_pdf(self, file_path, variant, original_filename=None):
         """Parse a PDF, chunk, embed and persist under a ruleset variant."""
+        # 1. Protection: Check if variant already has data
+        if self.db.variant_exists(variant):
+            print(f"   ⚠️ Protection: Data for variant '{variant}' already exists. Refusing to overwrite.")
+            return -1
+
         # 2. Ingest
         # Dynamically load the configured loader (Online vs Batch)
         docai_loader = loaders.get_document_ai_loader()

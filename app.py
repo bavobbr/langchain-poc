@@ -55,7 +55,11 @@ with st.sidebar:
             
             # Persist with the selected variant label
             count = engine.ingest_pdf(tmp_path, selected_variant, original_filename=uploaded_file.name)
-            st.success(f"Successfully indexed {count} rules for {selected_variant}!")
+            
+            if count == -1:
+                 st.warning(f"Data for **{selected_variant}** already exists in the Knowledge Base. To overwrite, please clear the database first (admin only).")
+            else:
+                 st.success(f"Successfully indexed {count} rules for {selected_variant}!")
 
 # --- CHAT UI ---
 if "messages" not in st.session_state:
