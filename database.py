@@ -69,6 +69,13 @@ class PostgresVectorDB:
             conn.execute(stmt, data)
             conn.commit()
 
+    def delete_variant(self, variant):
+        """Delete all existing chunks for a specific variant (Idempotency)."""
+        with self.pool.connect() as conn:
+            stmt = text(f"DELETE FROM {config.TABLE_NAME} WHERE variant = :variant")
+            conn.execute(stmt, {"variant": variant})
+            conn.commit()
+
     def search(self, query_vector, variant, k=15):
         """Return top-k similar chunks for a variant using <=> distance."""
         with self.pool.connect() as conn:

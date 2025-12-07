@@ -23,7 +23,7 @@ DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "2699879b692a67f")
 DOCAI_LOCATION = os.getenv("DOCAI_LOCATION", "eu")
 # Staging bucket for Document AI
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "fih-rag-staging-langchain-poc-479114")
-DOCAI_INGESTION_MODE = os.getenv("DOCAI_INGESTION_MODE", "online").lower() # 'online' or 'batch'
+DOCAI_INGESTION_MODE = os.getenv("DOCAI_INGESTION_MODE", "batch").lower() # 'online' or 'batch'
 
 # Database (Cloud SQL Postgres)
 INSTANCE_NAME = os.getenv("CLOUDSQL_INSTANCE", "fih-rag-db")

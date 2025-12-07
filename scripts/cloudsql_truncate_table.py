@@ -1,34 +1,24 @@
 """Truncate the vector table in Cloud SQL (dangerous, for dev use)."""
 import sqlalchemy
-from langchain_google_cloud_sql_pg import PostgresEngine
+from database import PostgresVectorDB
+from sqlalchemy import text
 import config
-import asyncio
 
-async def wipe_database():
+def wipe_database():
     print(f"🔥 Connecting to {config.INSTANCE_NAME}...")
     
-    # 1. Initialize the Engine (using your existing Config)
-    engine = await PostgresEngine.afrom_instance(
-        project_id=config.PROJECT_ID,
-        region=config.REGION,
-        instance=config.INSTANCE_NAME,
-        database=config.DATABASE_NAME,
-        user=config.DB_USER,
-        password=config.DB_PASS
-    )
-
-    # 2. Define the Table Name
+    # 1. Initialize DB (uses shared Connector logic)
+    db = PostgresVectorDB()
     table_name = config.TABLE_NAME
 
-    # 3. Execute Truncate (Wipe all data)
+    # 2. Execute Truncate
     print(f"⚠️  Wiping table '{table_name}'...")
     
-    # We use a raw SQL command here
-    async with engine._engine.connect() as conn:
-        await conn.execute(sqlalchemy.text(f"TRUNCATE TABLE {table_name};"))
-        await conn.commit()
+    with db.pool.connect() as conn:
+        conn.execute(text(f"TRUNCATE TABLE {table_name};"))
+        conn.commit()
         
     print("✅ Database is empty. Ready for new labeled data!")
 
 if __name__ == "__main__":
-    asyncio.run(wipe_database())
+    wipe_database()

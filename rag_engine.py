@@ -41,6 +41,10 @@ class FIHRulesEngine:
             print("   ⚠️ No chunks generated!")
             return 0
         
+        # Deduplication: Clear existing data for this variant
+        print(f"   Cleaning existing '{variant}' data...")
+        self.db.delete_variant(variant)
+        
         # Embed
         print(f"   Generating embeddings for {len(docs)} chunks...")
         texts = [d.page_content for d in docs]
