@@ -13,7 +13,7 @@ This project is built on **Google Cloud Platform (GCP)** using a "Raw SQL" appro
 | Component | Technology | Description |
 | :--- | :--- | :--- |
 | **Orchestrator** | **LangChain** | Manages the flow between data, logic, and AI. |
-| **Ingestion** | **Unstructured.io** | Layout-aware PDF parsing (detects headers vs. content). |
+| **Ingestion** | **Document AI** | Dual-Mode Layout-Aware Parsing (Online/Batch). |
 | **Embeddings** | **Vertex AI** | Uses `text-embedding-004` for vector generation. |
 | **Vector DB** | **Cloud SQL** | PostgreSQL 15 + `pgvector`. Accessed via **Raw SQL (`pg8000`)** for maximum control. |
 | **Reasoning** | **Gemini 2.0 Flash Lite** | LLM for synthesis and legal reasoning. |
@@ -21,6 +21,7 @@ This project is built on **Google Cloud Platform (GCP)** using a "Raw SQL" appro
 | **Hosting** | **Cloud Run** | Serverless container deployment (1GB RAM). |
 
 ### Ingestion flow
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -34,10 +35,15 @@ sequenceDiagram
     User->>App: Select Variant (e.g., "Indoor")
     User->>App: Upload PDF
 
-    Note over Engine: 2. Processing Phase
+    Note over Engine: 2. Processing Phase (Dual Mode)
     App->>Engine: ingest_pdf(file, variant="indoor")
-    Engine->>Engine: Parse PDF (UnstructuredPDFLoader)
-    Engine->>Engine: Semantic Chunking (Regex)
+    
+    Engine->>DB: Upload to GCS Bucket
+    Engine->>Vertex: Batch Process (Async)
+    Engine->>DB: Download JSON Output
+
+    Engine->>Engine: Layout-Aware Chunking (Visual Sort)
+    Engine->>DB: Delete Existing Variant Data (Idempotency)
 
     Note over Engine, DB: 3. Storage Phase
     Engine->>Vertex: Embed Chunks (text-embedding-004)
@@ -261,7 +267,12 @@ We utilize a `k=15` retrieval strategy.
 * **Why:** Legal queries often require synthesizing multiple rules (e.g., "Definition of Foul" + "Location Penalty").
 * **How:** We leverage Gemini 2.0 Flash Lite's context window to retrieve a wider net of potential rules, allowing the LLM to filter noise and perform multi-hop reasoning.
 
-### 5. Document AI "Sharding"
-To avoid the complexity of Asynchronous Batch Processing (and associated IAM delays), we implemented a **Synchronous Online Processing** strategy for PDFs.
-*   **The Constraint:** Online processing has a 15-page limit per request.
-*   **The Solution:** The `DocumentAILoader` automatically splits large PDFs (client-side) into 15-page chunks, sends them to the API in parallel/series, and stitches the text back together. This provides a robust, zero-infrastructure-change ingestion path.
+### 5. Document AI "Dual Mode" Strategy
+To balance **Ease of Use** vs **Semantic Completeness**, we implemented a Factory Pattern supporting two modes:
+*   **Online Mode (Default):** Client-side sharding (15 pages/req). Fast, zero infrastructure setup, bypasses IAM.
+*   **Batch Mode:** Full GCS uploads. Slower but preserves cross-page context.
+*   **Shared Intelligence:** Both modes use the same `DocumentAILayoutMixin` to perform **Visual Sorting** (Row-Major), ensuring columns are read correctly.
+
+### 6. Idempotent Ingestion
+Re-ingesting a document (e.g., updating rules) previously created duplicates.
+*   **Solution:** We implemented a "Clean & Replace" strategy. The `ingest_pdf` method now automatically deletes all existing vectors for the target variant *before* inserting new ones, ensuring the database never holds stale or duplicate data.
