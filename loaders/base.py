@@ -6,6 +6,6 @@ class BaseLoader(ABC):
     """Abstract base class for PDF ingestion implementations."""
     
     @abstractmethod
-    def load_and_chunk(self, file_path: str, variant: str) -> List[Document]:
+    def load_and_chunk(self, file_path: str, variant: str, original_filename: str = None) -> List[Document]:
         """Parses a PDF and returns a list of semantically chunked Documents."""
         pass

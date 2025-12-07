@@ -54,7 +54,7 @@ with st.sidebar:
                 tmp_path = tmp.name
             
             # Persist with the selected variant label
-            count = engine.ingest_pdf(tmp_path, selected_variant)
+            count = engine.ingest_pdf(tmp_path, selected_variant, original_filename=uploaded_file.name)
             st.success(f"Successfully indexed {count} rules for {selected_variant}!")
 
 # --- CHAT UI ---
@@ -78,13 +78,17 @@ if prompt := st.chat_input("Ask a question (e.g., 'What about indoor penalty cor
             st.markdown(result["answer"])
             
             # Show routed ruleset and short source previews
-            with st.expander("Debug: Routing & Sources"):
+            # Use a unique key to ensure the expander state (collapsed) is reset for every new query
+            with st.expander("Debug: Routing & Sources", expanded=False):
                 st.info(f"🚦 Router selected: **{result['variant'].upper()}**")
                 st.write(f"**Reformulated Query:** {result['standalone_query']}")
                 st.write("**Sources:**")
                 for doc in result["source_docs"]:
-                    st.caption(f"[{doc.metadata.get('variant', 'unknown')}] {doc.metadata.get('heading', 'Section')}")
-                    st.text(doc.page_content[:150] + "...")
+                    source_file = doc.metadata.get("source_file", "unknown")
+                    page_num = doc.metadata.get("page", "?")
+                    st.caption(f"[{doc.metadata.get('variant', 'unknown')}] {doc.metadata.get('chapter', '')}  {doc.metadata.get('section', '')} {doc.metadata.get('heading', '')} ({source_file} p.{page_num})")
+                    st.text("Summary:   ")
+                    st.text(doc.metadata.get("summary", "No summary available"))
 
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.session_state.messages.append({"role": "assistant", "content": result["answer"]})

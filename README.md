@@ -276,3 +276,12 @@ To balance **Ease of Use** vs **Semantic Completeness**, we implemented a Factor
 ### 6. Idempotent Ingestion
 Re-ingesting a document (e.g., updating rules) previously created duplicates.
 *   **Solution:** We implemented a "Clean & Replace" strategy. The `ingest_pdf` method now automatically deletes all existing vectors for the target variant *before* inserting new ones, ensuring the database never holds stale or duplicate data.
+
+### 7. Metadata-Driven Context Injection
+To prevent the LLM from hallucinating constraints or mixing up "Umpiring" rules with "Playing" rules, we implemented a **Hierarchical Metadata Strategy**.
+*   **Extraction:** The parser detects Chapters (ALL CAPS) and Sections (Digit + Text) and assigns them to every extracted Rule chunk.
+*   **Storage:** We utilize a JSONB `metadata` column in Postgres to store this hierarchy alongside the text vectors.
+*   **Injection:** During retrieval, we format the context block to explicitly cite the source, e.g., `[Rule 9.12] (Context: PLAYING THE GAME > Method of Scoring)`. This provides the LLM with a "Standard of Truth" for citations.
+
+### 8. AI-Generated Summaries
+We enrich each chunk with a **concise, AI-generated summary** (max 15 words) during ingestion. This "human-readable label" (e.g., "Umpires must remain neutral") allows the system to present search results that are immediately understandable to users, rather than just listing opaque rule numbers like "1.2".

@@ -7,6 +7,7 @@ from google.cloud import storage
 from langchain_core.documents import Document
 from .base import BaseLoader
 from .document_ai_common import DocumentAILayoutMixin
+from .utils import summarize_text
 import config
 import os
 
@@ -24,9 +25,9 @@ class DocumentAIBatchLoader(BaseLoader, DocumentAILayoutMixin):
         opts = {"api_endpoint": f"{self.location}-documentai.googleapis.com"}
         self.docai_client = documentai.DocumentProcessorServiceClient(client_options=opts)
 
-    def load_and_chunk(self, file_path: str, variant: str) -> List[Document]:
+    def load_and_chunk(self, file_path: str, variant: str, original_filename: str = None) -> List[Document]:
         print(f" -> [DocAI Batch] 1. Uploading {file_path} to GCS...")
-        gcs_uri = self._upload_to_gcs(file_path)
+        gcs_uri = self._upload_to_gcs(file_path, original_filename)
         
         print(f" -> [DocAI Batch] 2. Submitting Batch Job...")
         operation = self._batch_process(gcs_uri)
@@ -39,12 +40,29 @@ class DocumentAIBatchLoader(BaseLoader, DocumentAILayoutMixin):
         docai_shards = self._get_results(gcs_uri)
         
         print(f" -> [DocAI Batch] 5. Structural Chunking...")
-        return self._layout_chunking(docai_shards, variant)
+        chunks = self._layout_chunking(docai_shards, variant)
+        
+        print(f" -> [DocAI Batch] 6. Summarizing {len(chunks)} chunks...")
+        for i, doc in enumerate(chunks):
+            # print(f"    - Summarizing chunk {i+1}/{len(chunks)}...") # Optional verbosity
+            summary = summarize_text(doc.page_content)
+            doc.metadata["summary"] = summary
+            doc.metadata["source_file"] = original_filename if original_filename else file_path.split("/")[-1]
+            if "page" not in doc.metadata:
+                doc.metadata["page"] = "unknown"
+            
+        return chunks
 
-    def _upload_to_gcs(self, file_path: str) -> str:
+    def _upload_to_gcs(self, file_path: str, original_filename: str = None) -> str:
         """Uploads file to GCS staging bucket."""
         bucket = self.storage_client.bucket(self.gcs_bucket_name)
-        blob_name = f"uploads/{os.path.basename(file_path)}"
+        
+        # Determine blob name: preserve original filename if possible, otherwise use local basename.
+        # Use a flat 'uploads/' directory or 'uploads/{original}' logic.
+        # To strictly "preserve the filename" as requested, we should use it as the blob basename.
+        filename = original_filename if original_filename else os.path.basename(file_path)
+        blob_name = f"uploads/{filename}"
+        
         blob = bucket.blob(blob_name)
         blob.upload_from_filename(file_path)
         return f"gs://{self.gcs_bucket_name}/{blob_name}"

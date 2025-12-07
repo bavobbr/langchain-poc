@@ -39,7 +39,7 @@ RETRIEVAL_K = 15
 
 # Supported Variants (key = DB label, value = UI label)
 VARIANTS = {
-    "outdoor": "Outdoor Hockey (Default)",
+    "outdoor": "Outdoor Hockey",
     "indoor": "Indoor Hockey",
     "hockey5s": "Hockey 5s"
 }

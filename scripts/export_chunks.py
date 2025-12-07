@@ -11,11 +11,14 @@ def export_chunks():
     print(f"--- Exporting Chunks from {INPUT_PDF} ---")
     
     # 1. Initialize Loader
-    loader = loaders.get_document_ai_loader()
+    # Using Online Loader directly for specific page debug (Index 42 = Page 43)
+    from loaders.document_ai_online_loader import DocumentAIOnlineLoader
+    loader = DocumentAIOnlineLoader()
     
     # 2. Run Ingestion (This triggers the full DocAI pipeline)
-    print("Running DocumentAILoader...")
-    chunks = loader.load_and_chunk(INPUT_PDF, variant="outdoor")
+    print("Running DocumentAILoader (Online Mode, Page 43 only)...")
+    # Page index 42 because pdf pages are 0-indexed
+    chunks = loader.load_and_chunk(INPUT_PDF, variant="outdoor", target_pages=[42])
     
     print(f"✅ Generated {len(chunks)} chunks.")
     

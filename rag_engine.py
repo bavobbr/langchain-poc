@@ -30,12 +30,12 @@ class FIHRulesEngine:
         self.db = PostgresVectorDB()
 
     # Ingestion
-    def ingest_pdf(self, file_path, variant):
+    def ingest_pdf(self, file_path, variant, original_filename=None):
         """Parse a PDF, chunk, embed and persist under a ruleset variant."""
         # 2. Ingest
         # Dynamically load the configured loader (Online vs Batch)
         docai_loader = loaders.get_document_ai_loader()
-        docs = docai_loader.load_and_chunk(file_path, variant)
+        docs = docai_loader.load_and_chunk(file_path, variant, original_filename=original_filename)
 
         if not docs:
             print("   ⚠️ No chunks generated!")
@@ -50,8 +50,10 @@ class FIHRulesEngine:
         texts = [d.page_content for d in docs]
         metadatas = [d.metadata for d in docs]
         vectors = self.embeddings.embed_documents(texts)
+        print(f"   Generated embeddings for {len(docs)} chunks...")
         # Persist
         self.db.insert_batch(texts, vectors, variant, metadatas=metadatas)
+        print(f"   Persisted {len(docs)} chunks to DB...")
         
         return len(docs)
 
@@ -82,8 +84,11 @@ class FIHRulesEngine:
             section = meta.get("section", "")
             
             # Construct Citation Header
-            # e.g. [Rule 9.12] (Context: PLAYING THE GAME > Field of Play)
-            context_string = f"[{heading}]"
+            # e.g. [Rule 9.12] [Source: rules.pdf p.42] (Context: PLAYING THE GAME > Field of Play)
+            source_file = meta.get("source_file", "unknown")
+            page_num = meta.get("page", "?")
+            
+            context_string = f"[{heading}] [Source: {source_file} p.{page_num}]"
             if chapter or section:
                 context_string += f" (Context: {chapter} > {section})"
             
