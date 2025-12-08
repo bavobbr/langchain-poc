@@ -34,7 +34,11 @@ class FIHRulesEngine:
     # Ingestion
     def ingest_pdf(self, file_path, variant, original_filename=None):
         """Parse a PDF, chunk, embed and persist under a ruleset variant."""
-        # 0. Ensure Schema
+        # 0. Validate Input
+        if variant not in config.VARIANTS:
+            raise ValueError(f"Invalid variant '{variant}'. Allowed: {list(config.VARIANTS.keys())}")
+
+        # 1. Ensure Schema
         self.db.ensure_schema()
 
         # 1. Protection: Check if variant already has data
