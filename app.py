@@ -22,7 +22,8 @@ def get_app_engine():
     return FIHRulesEngine()
 
 try:
-    engine = get_app_engine()
+    with st.spinner("Connecting to Cloud Knowledge Base..."):
+        engine = get_app_engine()
     st.success("✅ Connected to Cloud Knowledge Base")
 except Exception as e:
     st.error(f"Failed to initialize engine: {e}")
@@ -57,9 +58,13 @@ with st.sidebar:
             count = engine.ingest_pdf(tmp_path, selected_variant, original_filename=uploaded_file.name)
             
             if count == -1:
-                 st.warning(f"Data for **{selected_variant}** already exists in the Knowledge Base. To overwrite, please clear the database first (admin only).")
+                st.warning(f"Data for **{selected_variant}** already exists in the Knowledge Base. To overwrite, please clear the database first (admin only).")
             else:
-                 st.success(f"Successfully indexed {count} rules for {selected_variant}!")
+                st.success(f"Successfully indexed {count} rules for {selected_variant}!")
+
+    st.markdown("---")
+    st.markdown("👨‍💻 By **Bavo Bruylandt**")
+    st.markdown("🔗 [Source Code](https://github.com/bavobbr/langchain-poc)")
 
 # --- CHAT UI ---
 if "messages" not in st.session_state:
