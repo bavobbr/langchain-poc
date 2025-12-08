@@ -18,7 +18,7 @@ class PostgresVectorDB:
             "postgresql+pg8000://",
             creator=self._get_conn,
         )
-        self._init_schema()
+        # Schema init is now lazy/on-demand (see ensure_schema)
 
     def _get_conn(self):
         """Return a fresh pg8000 connection via the Cloud SQL connector.
@@ -39,7 +39,7 @@ class PostgresVectorDB:
             db=config.DATABASE_NAME
         )
 
-    def _init_schema(self):
+    def ensure_schema(self):
         """Ensure the table exists and has the correct schema (Self-Healing)."""
         table_name = config.TABLE_NAME
         with self.pool.connect() as conn:

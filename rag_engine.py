@@ -4,16 +4,18 @@ Provides ingestion (chunking + embeddings + persistence) and query handling
 (contextualization, routing, retrieval, and synthesis).
 """
 
-from langchain_google_vertexai import VertexAIEmbeddings, VertexAI
+
 from langchain_core.documents import Document
 import config
 from database import PostgresVectorDB
-import loaders
 
 class FIHRulesEngine:
     """High-level interface to embeddings, LLM, and vector DB."""
 
     def __init__(self):
+        # Lazy import to avoid 3s hit on startup
+        from langchain_google_vertexai import VertexAIEmbeddings, VertexAI
+        
         # Models
         self.embeddings = VertexAIEmbeddings(
             model_name=config.EMBEDDING_MODEL, 
@@ -32,13 +34,18 @@ class FIHRulesEngine:
     # Ingestion
     def ingest_pdf(self, file_path, variant, original_filename=None):
         """Parse a PDF, chunk, embed and persist under a ruleset variant."""
+        # 0. Ensure Schema
+        self.db.ensure_schema()
+
         # 1. Protection: Check if variant already has data
         if self.db.variant_exists(variant):
             print(f"   ⚠️ Protection: Data for variant '{variant}' already exists. Refusing to overwrite.")
             return -1
 
         # 2. Ingest
-        # Dynamically load the configured loader (Online vs Batch)
+        # Dynamically load the configured loader (Online vs Batch) 
+        # Lazy import loaders
+        import loaders
         docai_loader = loaders.get_document_ai_loader()
         docs = docai_loader.load_and_chunk(file_path, variant, original_filename=original_filename)
 
