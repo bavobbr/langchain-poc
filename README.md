@@ -38,11 +38,18 @@ sequenceDiagram
     Note over Engine: 2. Processing Phase (Dual Mode)
     App->>Engine: ingest_pdf(file, variant="indoor")
     
+    Engine->>DB: Check if Variant Exists (Protection)
+    
     Engine->>DB: Upload to GCS Bucket
-    Engine->>Vertex: Batch Process (Async)
+    Engine->>Vertex: Batch Process (Document AI)
     Engine->>DB: Download JSON Output
 
     Engine->>Engine: Layout-Aware Chunking (Visual Sort)
+    
+    loop For Each Chunk
+        Engine->>Vertex: Generate Summary (Gemini 1.5)
+    end
+
     Engine->>DB: Delete Existing Variant Data (Idempotency)
 
     Note over Engine, DB: 3. Storage Phase
@@ -51,6 +58,65 @@ sequenceDiagram
     Engine->>DB: INSERT INTO vectors (content, embedding, variant)
     DB-->>App: Success
 ```
+
+### Ingestion Lifecycle Deep Dive
+
+This section details the lifecycle of a document ingestion, explaining how raw PDFs are enriched.
+
+#### Step 1: Selection & Protection
+**Goal:** Ensure data integrity and prevent accidental data loss.
+
+*   **Input:** User selects a "Ruleset Variant" (e.g., `Indoor`) and uploads a PDF.
+*   **Action:** The system queries the `hockey_rules_vectors` table: `SELECT 1 FROM table WHERE variant = 'indoor'`.
+*   **Logic:**
+    *   If data exists: **ABORT**. Return warning to user. "Refusing to overwrite."
+    *   If empty: Proceed.
+
+#### Step 2: Visual Parsing (Document AI)
+**Goal:** Convert a raw PDF into structured, spatially-aware blocks. Generic text extraction (like PyPDF) fails on multi-column layouts.
+
+*   **Component:** **Google Cloud Document AI (OCR Processor)**.
+*   **Input:** Raw PDF bytes (via GCS for Batch mode).
+*   **AI Operation:** Optical Character Recognition (OCR) + Layout Analysis.
+*   **Output:** A `Document` object containing pages, blocks, paragraphs, and—crucially—**spatial coordinates**.
+
+#### Step 3: Layout-Aware Chunking
+**Goal:** Reconstruct logical rules from the visual blocks.
+
+*   **Component:** Python Logic (`loaders/document_ai_common.py`).
+*   **Logic:**
+    1.  **Visual Sort:** Order text blocks by Y-coordinate, then X-coordinate (Row-Major).
+    2.  **Regex Segmentation:** Detect Rule headers (e.g., `9.12`) to split text.
+    3.  **Hierarchy Extraction:** Detect Chapter titles (ALL CAPS) and Section headers.
+    4.  **Metadata Extraction:** Capture **Page Number** and **Source Filename**.
+
+#### Step 4: AI Summarization (Enrichment)
+**Goal:** Create a human-readable label for every chunk.
+
+*   **Input:** The raw text of a single chunk.
+*   **Component:** **Vertex AI (Gemini 1.5 Flash)**.
+*   **AI Operation:** Text Summarization.
+*   **Prompt Strategy:**
+    ```text
+    Summarize this rule in under 15 words.
+    TEXT: ...
+    ```
+*   **Result:** A concise string stored in metadata (e.g., "Penalty Stroke Conditions").
+
+#### Step 5: Embedding & Persistence
+**Goal:** Make the enriched text searchable.
+
+*   **Components:** **Vertex AI (`text-embedding-004`)** + **Cloud SQL (pgvector)**.
+*   **Action:**
+    1.  Convert text content to a 768-dimensional vector.
+    2.  Insert row: `[Content, Vector, Variant, Metadata JSON]`.
+
+#### Summary of AI Involvement
+| Phase | Model | Purpose |
+| :--- | :--- | :--- |
+| **Parsing** | **Document AI (OCR)** | **Structure:** extracting layout, columns, and reading order. |
+| **Enrichment** | **Gemini 1.5 Flash** | **Summarization:** Creating human-readable labels for chunks. |
+| **Storage** | **Text-Embedding-004** | **Searchability:** Converting text to semantic vectors. |
 
 ### Query flow
 
@@ -98,6 +164,77 @@ sequenceDiagram
 ```
 
 
+
+### Query Lifecycle Deep Dive
+
+This section details the lifecycle of a user query, explaining how data is synthesized.
+
+#### Step 1: Input & Contextualization
+**Goal:** Handle conversation history (e.g., "What about for a defender?") by turning it into a standalone question.
+
+*   **Input:** User's latest message + Last 4 messages of chat history.
+*   **Component:** **Vertex AI (Gemini 2.0 Flash Lite)**.
+*   **AI Operation:** Text Rewriting.
+*   **Prompt Strategy:**
+    ```text
+    Rewrite to be standalone.
+    HISTORY: ...
+    QUESTION: What about for a defender?
+    ```
+*   **Result (Example):** "What corresponds to a yellow card for a defender in Outdoor hockey?"
+
+#### Step 2: Intent Routing
+**Goal:** Determine *which* rulebook to search. Searching "Indoor" rules for an "Outdoor" question leads to hallucinations.
+
+*   **Component:** **Vertex AI (Gemini 2.0 Flash Lite)**.
+*   **AI Operation:** Classification.
+*   **Result:** A variant string, e.g., `"indoor"`.
+
+#### Step 3: Retrieval (Vector Search)
+**Goal:** Find the top 15 most semantically similar rules *within that specific variant*.
+
+*   **Components:** **Vertex AI (`text-embedding-004`)** + **Cloud SQL (pgvector)**.
+*   **Query Logic (Raw SQL):**
+    ```sql
+    SELECT content, variant, metadata
+    FROM hockey_rules_vectors
+    WHERE variant = :detected_variant  -- <CRITICAL: Hard Filter
+    ORDER BY embedding <=> :query_vector
+    LIMIT 15
+    ```
+
+#### Step 4: Context Assembly
+**Goal:** Prepare the data for the LLM with explicit "Hooks" to cite.
+
+*   **Formatting Logic:**
+    > `[Rule 9.12] [Source: fih-rules-2023.pdf p.42] (Context: PLAYING > Scoring)`
+    > *...rule text content...*
+
+#### Step 5: Synthesis (Final Answer)
+**Goal:** Generate a natural language answer grounded *only* in the retrieved context.
+
+*   **Component:** **Vertex AI (Gemini 2.0 Flash Lite)**.
+*   **Prompt Structure:**
+    ```text
+    Expert FIH Umpire for {detected_variant.upper()}.
+    Answer based on Context. Cite Rules.
+
+    CONTEXT:
+    {formatted_context_with_headers}
+
+    QUESTION:
+    {standalone_query}
+    ```
+
+#### Summary of AI Involvement
+| Phase | Model | Purpose |
+| :--- | :--- | :--- |
+| **Ingestion** | **Gemini 1.5 Flash** | **Summarization**: Generates human-readable labels for every chunk. |
+| **Query** | **Gemini 2.0 Flash Lite** | **Contextualization**: Rewrites follow-up questions. |
+| **Query** | **Gemini 2.0 Flash Lite** | **Routing**: Classifies intent (Indoor/Outdoor). |
+| **Query** | **Text-Embedding-004** | **Retrieval**: Semantic search. |
+| **Query** | **Gemini 2.0 Flash Lite** | **Synthesis**: Final answer generation with citations. |
+
 ---
 
 ## Project Structure
@@ -107,7 +244,7 @@ We follow a modular **MVC + Repository** pattern:
 ```text
 .
 ├── app.py                 # (View) Streamlit UI & Session State
-├── loaders/               # (New) Document Ingestion Strategy Pattern
+├── loaders/               # Document Ingestion Strategy Pattern
 ├── rag_engine.py          # (Controller) Orchestrates AI, Chunking, and Context logic
 ├── database.py            # (Model/Repository) Raw SQL handling & DB Connections
 ├── config.py              # Configuration & Constants
@@ -120,8 +257,8 @@ We follow a modular **MVC + Repository** pattern:
 
 ## Getting Started
 
-### OS Prerequisites (for PDF parsing)
-Install system packages required by Unstructured and PDF tooling:
+### OS Prerequisites (Optional)
+**Only required if using legacy local parsing tools** (e.g., Unstructured, PyPDF). If you are using the default Google Cloud Document AI pipeline, you can skip this.
 
 - macOS (Homebrew): `brew install poppler libmagic`
 - Debian/Ubuntu: `sudo apt-get update && sudo apt-get install -y poppler-utils libmagic1`
@@ -154,7 +291,7 @@ DOCAI_PROCESSOR_ID=your-processor-id
 GCS_BUCKET_NAME=your-staging-bucket
 ```
 
-Run as usual (no extra flags needed): `streamlit run app.py` or `python scripts/cloudsql_debug_schema.py`. The `.env` file is ignored by Git.
+Run as usual (no extra flags needed): `streamlit run app.py`. The `.env` file is ignored by Git.
 
 Optional developer setup
 - Install dev tools: `make dev-install`
@@ -171,14 +308,18 @@ gcloud config set project YOUR_PROJECT_ID
 # 1. Enable APIs
 gcloud services enable aiplatform.googleapis.com sqladmin.googleapis.com run.googleapis.com
 
-# 2. Create Cloud SQL Instance (Micro tier to minimize cost)
+# 2. Create Document AI Processor (OCR)
+# This script creates an OCR processor if one doesn't exist.
+python scripts/setup_docai_processor.py
+
+# 3. Create Cloud SQL Instance (Micro tier to minimize cost)
 gcloud sql instances create fih-rag-db \
     --database-version=POSTGRES_15 \
     --tier=db-f1-micro \
     --region=europe-west1 \
     --root-password=YOUR_STRONG_PASSWORD
 
-# 2. Create Database & Enable IAM
+# 4. Create Database & Enable IAM
 gcloud sql databases create hockey_db --instance=fih-rag-db
 gcloud sql instances patch fih-rag-db --database-flags=cloudsql.iam_authentication=on
 ```
@@ -273,48 +414,20 @@ To balance **Ease of Use** vs **Semantic Completeness**, we implemented a Factor
 *   **Batch Mode:** Full GCS uploads. Slower but preserves cross-page context.
 *   **Shared Intelligence:** Both modes use the same `DocumentAILayoutMixin` to perform **Visual Sorting** (Row-Major), ensuring columns are read correctly.
 
-### 6. Idempotent Ingestion
-Re-ingesting a document (e.g., updating rules) previously created duplicates.
-*   **Solution:** We implemented a "Clean & Replace" strategy. The `ingest_pdf` method now automatically deletes all existing vectors for the target variant *before* inserting new ones, ensuring the database never holds stale or duplicate data.
+### 6. Overwrite Protection (Safety First)
+Accidental re-ingestion could disrupt the knowledge base.
+*   **Protection:** The system checks if data for a variant (e.g., "Indoor") already exists before processing.
+*   **Refusal:** If found, it refuses the upload with a warning, requiring administrative action to clear the database first. This prevents accidental data loss or duplication.
 
 ### 7. Metadata-Driven Context Injection
-To prevent the LLM from hallucinating constraints or mixing up "Umpiring" rules with "Playing" rules, we implemented a **Hierarchical Metadata Strategy**.
-*   **Extraction:** The parser detects Chapters (ALL CAPS) and Sections (Digit + Text) and assigns them to every extracted Rule chunk.
-*   **Storage:** We utilize a JSONB `metadata` column in Postgres to store this hierarchy alongside the text vectors.
-*   **Injection:** During retrieval, we format the context block to explicitly cite the source, e.g., `[Rule 9.12] (Context: PLAYING THE GAME > Method of Scoring)`. This provides the LLM with a "Standard of Truth" for citations.
+To prevent the LLM from hallucinating constraints, we implemented a **Hierarchical Metadata Strategy**.
+*   **Extraction:** Detects Chapters (ALL CAPS) and Sections (Digit + Text).
+*   **Source Attribution:** Tracks **Original Filename** and **Page Numbers** for every chunk, ensuring citations are precise (e.g., `rules.pdf p.42`).
+*   **Injection:** During retrieval, context is formatted to explicitly cite the source: `[Rule 9.12] [Source: rules.pdf p.42] (Context: PLAYING > Scoring)`.
 
 ### 8. AI-Generated Summaries
 We enrich each chunk with a **concise, AI-generated summary** (max 15 words) during ingestion. This "human-readable label" (e.g., "Umpires must remain neutral") allows the system to present search results that are immediately understandable to users, rather than just listing opaque rule numbers like "1.2".
+### 9. UX Enhancements
+*   **Starter Questions:** Proactive suggestions (e.g., "Duration of Yellow Card") help users discover capabilities immediately.
+*   **Persistent Debug Inspector:** A dedicated, persistent view displays the routing logic, query reformulation, and source metadata (including summaries) for the last query, ensuring transparency without cluttering the chat.
 
----
-
-## Cloud Run IAM Preflight (Batch Mode)
-
-When running on Cloud Run with `DOCAI_INGESTION_MODE=batch`, both your Cloud Run
-service account and the Document AI service agent must access the staging GCS bucket
-(`GCS_BUCKET_NAME`). If ingestion fails with a 403 on `storage.objects.get`, run
-the preflight and verify IAM:
-
-1) Run preflight (locally with ADC or within the service):
-
-```bash
-python -m scripts.cloudrun_preflight
-```
-
-2) Grant required IAM (replace placeholders):
-
-```bash
-# Cloud Run service account → GCS bucket
-gsutil iam ch serviceAccount:<RUN_SA_EMAIL>:roles/storage.objectAdmin gs://<BUCKET>
-
-# Document AI service agent → GCS bucket
-gsutil iam ch serviceAccount:service-<PROJECT_NUMBER>@gcp-sa-documentai.iam.gserviceaccount.com:roles/storage.objectAdmin gs://<BUCKET>
-
-# Cloud Run service account → Document AI API
-gcloud projects add-iam-policy-binding <PROJECT_ID> \
-  --member=serviceAccount:<RUN_SA_EMAIL> --role=roles/documentai.apiUser
-```
-
-Tips:
-- Keep `DOCAI_LOCATION` aligned to your processor and prefer an EU bucket when using `eu`.
-- To bypass GCS IAM entirely, deploy with `--set-env-vars=DOCAI_INGESTION_MODE=online`.
