@@ -1,3 +1,4 @@
+"""Export Document AI chunks to a text file for manual inspection."""
 import os
 import sys
 import loaders

@@ -1,4 +1,3 @@
-
 """
 Unit Test for Hierarchical Metadata Parsing.
 

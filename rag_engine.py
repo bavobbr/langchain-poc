@@ -13,7 +13,7 @@ class FIHRulesEngine:
     """High-level interface to embeddings, LLM, and vector DB."""
 
     def __init__(self):
-        # Lazy import to avoid 3s hit on startup
+        # Defer import of heavy Vertex AI libraries to instantiation time (reduces startup latency)
         from langchain_google_vertexai import VertexAIEmbeddings, VertexAI
         
         # Models
@@ -33,7 +33,10 @@ class FIHRulesEngine:
 
     # Ingestion
     def ingest_pdf(self, file_path, variant, original_filename=None):
-        """Parse a PDF, chunk, embed and persist under a ruleset variant."""
+        """Parse a PDF, chunk, embed and persist under a ruleset variant.
+
+        Validates 'variant' against config.VARIANTS to prevent unauthorized data creation.
+        """
         # 0. Validate Input
         if variant not in config.VARIANTS:
             raise ValueError(f"Invalid variant '{variant}'. Allowed: {list(config.VARIANTS.keys())}")

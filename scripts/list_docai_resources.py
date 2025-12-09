@@ -1,4 +1,3 @@
-
 """
 List Document AI Processors in US and EU regions.
 """

@@ -1,4 +1,3 @@
-
 """
 Delete a specific Document AI Processor.
 """

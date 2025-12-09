@@ -1,4 +1,3 @@
-
 """
 Verification Script for Metadata Support
 

@@ -1,4 +1,3 @@
-
 """
 Verification Script for Idempotent Ingestion (Deduplication)
 

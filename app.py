@@ -21,6 +21,7 @@ def get_app_engine():
     """Create and cache the application engine (LLM + DB)."""
     return FIHRulesEngine()
 
+# Attempt to connect to the engine with visual feedback
 try:
     with st.spinner("Connecting to Cloud Knowledge Base..."):
         engine = get_app_engine()

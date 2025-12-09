@@ -1,4 +1,3 @@
-
 """
 Cleanup Script for GCS Bucket (Dangerous)
 

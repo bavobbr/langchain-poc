@@ -1,3 +1,4 @@
+"""Deep dive into Document AI JSON output structure."""
 import os
 import sys
 import loaders

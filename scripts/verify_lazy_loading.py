@@ -1,4 +1,5 @@
 
+"""Verify that heavy modules (Vertex AI, Loaders) are lazy loaded."""
 import time
 import sys
 import os

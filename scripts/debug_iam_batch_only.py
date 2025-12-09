@@ -1,4 +1,3 @@
-
 """
 Minimal Reproduction Script for Document AI 403 Error (Support Case)
 

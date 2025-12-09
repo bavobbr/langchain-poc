@@ -18,7 +18,8 @@ class PostgresVectorDB:
             "postgresql+pg8000://",
             creator=self._get_conn,
         )
-        # Schema init is now lazy/on-demand (see ensure_schema)
+        # Schema initialization is deferred to 'ensure_schema()' to avoid blocking app startup
+        # with synchronous network calls. It is invoked only during data ingestion.
 
     def _get_conn(self):
         """Return a fresh pg8000 connection via the Cloud SQL connector.
