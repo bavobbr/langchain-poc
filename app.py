@@ -8,6 +8,12 @@ Responsibilities:
 
 import traceback
 import streamlit as st
+import warnings
+
+# Suppress warnings from Google Cloud libs regarding future deprecations
+# We are blocked from upgrading google-cloud-storage by langchain-google-vertexai
+warnings.filterwarnings("ignore", module="google.cloud.aiplatform.models")
+warnings.filterwarnings("ignore", category=UserWarning, module="vertexai._model_garden._model_garden_models")
 import tempfile
 import config
 from rag_engine import FIHRulesEngine
