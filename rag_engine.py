@@ -149,7 +149,16 @@ class FIHRulesEngine:
         """Rewrite the latest user message as a standalone query."""
         if not history: return query
         history_str = "\n".join([f"{role}: {txt}" for role, txt in history[-4:]])
-        prompt = f"Rewrite to be standalone.\nHISTORY:\n{history_str}\nQUESTION: {query}"
+        prompt = f"""Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
+        
+        Do NOT answer the question. Just rewrite it to be self-contained.
+        
+        Chat History:
+        {history_str}
+        
+        Follow Up Input: {query}
+        
+        Standalone Question:"""
         return self.llm.invoke(prompt).strip()
 
     def _route_query(self, query):
