@@ -8,6 +8,9 @@ Provides ingestion (chunking + embeddings + persistence) and query handling
 from langchain_core.documents import Document
 import config
 from database import PostgresVectorDB
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 class FIHRulesEngine:
     """High-level interface to embeddings, LLM, and vector DB."""
@@ -46,7 +49,7 @@ class FIHRulesEngine:
 
         # 1. Protection: Check if variant already has data
         if self.db.variant_exists(variant):
-            print(f"   ⚠️ Protection: Data for variant '{variant}' already exists. Refusing to overwrite.")
+            logger.warning(f"Protection: Data for variant '{variant}' already exists. Refusing to overwrite.")
             return -1
 
         # 2. Ingest
@@ -57,22 +60,22 @@ class FIHRulesEngine:
         docs = docai_loader.load_and_chunk(file_path, variant, original_filename=original_filename)
 
         if not docs:
-            print("   ⚠️ No chunks generated!")
+            logger.warning("No chunks generated!")
             return 0
         
         # Deduplication: Clear existing data for this variant
-        print(f"   Cleaning existing '{variant}' data...")
+        logger.info(f"Cleaning existing '{variant}' data...")
         self.db.delete_variant(variant)
         
         # Embed
-        print(f"   Generating embeddings for {len(docs)} chunks...")
+        logger.info(f"Generating embeddings for {len(docs)} chunks...")
         texts = [d.page_content for d in docs]
         metadatas = [d.metadata for d in docs]
         vectors = self.embeddings.embed_documents(texts)
-        print(f"   Generated embeddings for {len(docs)} chunks...")
+        
         # Persist
         self.db.insert_batch(texts, vectors, variant, metadatas=metadatas)
-        print(f"   Persisted {len(docs)} chunks to DB...")
+        logger.info(f"Persisted {len(docs)} chunks to DB.")
         
         return len(docs)
 

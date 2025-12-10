@@ -8,6 +8,9 @@ from google.cloud.sql.connector import Connector
 import sqlalchemy
 from sqlalchemy import text
 import config
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 class PostgresVectorDB:
     """Thin wrapper around a Postgres connection pool with vector ops."""
@@ -68,7 +71,7 @@ class PostgresVectorDB:
                 WHERE table_name='{table_name}' AND column_name='metadata';
             """)
             if not conn.execute(check_col).scalar():
-                print(f"⚠️  Migrating schema: Adding 'metadata' column to {table_name}...")
+                logger.warning(f"Migrating schema: Adding 'metadata' column to {table_name}...")
                 conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN metadata JSONB DEFAULT '{{}}'::jsonb;"))
             
             conn.commit()

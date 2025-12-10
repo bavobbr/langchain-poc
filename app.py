@@ -11,6 +11,9 @@ import streamlit as st
 import tempfile
 import config
 from rag_engine import FIHRulesEngine
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 st.set_page_config(page_title="FIH Rules Expert", page_icon="🏑")
 st.title("FIH Hockey Rules - RAG Agent")
@@ -27,13 +30,12 @@ try:
         engine = get_app_engine()
     st.success("✅ Connected to Cloud Knowledge Base")
 except Exception as e:
-    st.error(f"Failed to initialize engine: {e}")
-    # Surface full traceback in the UI for local/cloud debugging
-    st.markdown("### Debug Traceback:")
-    st.exception(e)
-    # Also emit to logs for post‑mortem diagnostics
-    print("CRITICAL INITIALIZATION ERROR:")
-    print(traceback.format_exc())
+    st.error("Failed to initialize engine. Please check logs.")
+    # Log the full traceback internally as JSON
+    logger.error("Critical Initialization Error", exc_info=True)
+    
+    # Optional: logic to show traceback only in dev
+    # st.exception(e) 
     st.stop()
 
 # Sidebar: ingest a PDF with a selected ruleset variant
