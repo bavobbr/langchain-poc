@@ -43,3 +43,7 @@ VARIANTS = {
     "indoor": "Indoor Hockey",
     "hockey5s": "Hockey 5s"
 }
+
+# Logging
+# Valid values: "JSON" (default), "HUMAN"
+LOG_FORMAT = os.getenv("LOG_FORMAT", "JSON").upper()
