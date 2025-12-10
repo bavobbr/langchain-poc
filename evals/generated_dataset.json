@@ -1,0 +1,140 @@
+[
+  {
+    "question": "In outdoor field hockey, what specific parts of the backlines are defined as the goal-lines?",
+    "ground_truth": "The goal-lines are the parts of the backlines between the goal-posts.",
+    "context_guidance": "Derived from 1.3",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is the primary responsibility of each umpire regarding the field during a match?",
+    "ground_truth": "Each umpire has primary responsibility for decisions in one half of the field for the duration of the match.",
+    "context_guidance": "Derived from 11.2",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, according to the rules, under what circumstances is a penalty corner considered complete?",
+    "ground_truth": "A penalty corner is completed when: a goal is scored; a free hit is awarded to the defending team; the ball travels more than 5 metres outside the circle; the ball is played over the back-line and a penalty corner is not awarded; a defender commits an offence which does not result in another penalty corner; or a penalty stroke is awarded.",
+    "context_guidance": "Derived from 13.5",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what action is required when the team captain is suspended during a match?",
+    "ground_truth": "A replacement captain must be appointed.",
+    "context_guidance": "Derived from 3.2",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is the required consequence when a player receives a second yellow card, and how does this relate to the duration of the first suspension?",
+    "ground_truth": "When a second yellow card is awarded, the period of suspension must be significantly longer than the first suspension.",
+    "context_guidance": "Derived from 2.3",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is the significance of the symbols 'A', 'M', and '8' as they relate to player positioning or team structure?",
+    "ground_truth": "The provided text does not contain enough information to answer the question. The symbols 'A', 'M', and '8' could represent anything from player positions to a simple pattern, but there is no context to determine their meaning.",
+    "context_guidance": "Derived from 1.5",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is the distance from the back-line to the 23-metre line?",
+    "ground_truth": "22.90 metres",
+    "context_guidance": "Derived from 1.5",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is the required characteristic of the transition from the handle to the head of a stick?",
+    "ground_truth": "The transition from handle to head must be smooth and continuous without any unevenness or other discontinuity.",
+    "context_guidance": "Derived from 2.7",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is the signal for two minutes of play remaining, and what is the rule regarding subsequent time signals after the initial signal has been acknowledged?",
+    "ground_truth": "The signal for two minutes of play remaining is to raise both hands straight up in the air with pointing index fingers. Once the timing signal has been acknowledged, no further time signal is needed.",
+    "context_guidance": "Derived from 4.1",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, according to the provided text, what is the primary objective umpires must demonstrate regarding player cooperation and match interruptions?",
+    "ground_truth": "Umpires must demonstrate that if players co-operate, skilful play will be protected, and the match will be interrupted only when essential for its proper conduct.",
+    "context_guidance": "Derived from 2.1",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In indoor field hockey, what part of a field player's body, other than the hand holding the stick, is prohibited from being on the pitch while playing the ball?",
+    "ground_truth": "A knee, arm, or hand.",
+    "context_guidance": "Derived from 9.12",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor field hockey, under what conditions is it NOT considered an offense for a player to unintentionally raise the ball off the pitch?",
+    "ground_truth": "It is not an offense if the ball rises unintentionally off the pitch by less than 100 mm unless an opponent is within playing distance of the ball.",
+    "context_guidance": "Derived from 9.9",
+    "variant": "indoor"
+  },
+  {
+    "question": "According to the provided text, what are the primary contributions of umpires to the game, and would these contributions differ in an indoor hockey setting?",
+    "ground_truth": "The text outlines that umpires contribute to the game by helping to raise the standard of the game, ensuring players observe the rules, ensuring the game is played in the right spirit, and increasing the enjoyment of the game. The text doesn't specify any differences based on whether the game is indoor or outdoor.",
+    "context_guidance": "Derived from 1.2",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor field hockey, what specific actions are umpires required to take to ensure accurate record-keeping and cooperation, as outlined in the provided text?",
+    "ground_truth": "Umpires must discuss and agree on how they will work together, maintain eye contact, assist each other when unsighted or having difficulty seeing parts of the pitch (potentially crossing the center-line), and both keep a record of goals scored and cards issued which must be confirmed at the end of the match.",
+    "context_guidance": "Derived from 3.2",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor field hockey, if a player receives a red card and is permanently suspended, when can the offending player re-enter the pitch after a penalty corner is awarded to the opposing team?",
+    "ground_truth": "The offending player will not be permitted to re-enter the pitch until play has restarted.",
+    "context_guidance": "Derived from 14.1",
+    "variant": "indoor"
+  },
+  {
+    "question": "Regarding field hockey sticks, what is the maximum allowable curvature depth (bow) for a stick used in indoor hockey?",
+    "ground_truth": "The text does not specify any differences between indoor and outdoor hockey sticks. Therefore, the maximum allowable curvature depth (bow) is 25 mm.",
+    "context_guidance": "Derived from 4.6",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor hockey, what is the expected behavior of players at all times?",
+    "ground_truth": "Players are expected to act responsibly at all times.",
+    "context_guidance": "Derived from 8.1",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor hockey, what is the penalty for an unintentional offence by a defender that occurs outside the circle but within the half of the pitch they are defending?",
+    "ground_truth": "for an unintentional offence by a defender outside the circle but within the half of the pitch they are defending.",
+    "context_guidance": "Derived from 12.2",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor field hockey, a free push is awarded to the attack within their attacking half. What are the restrictions on playing the ball into the circle, and what are the conditions if the player taking the free push continues to play the ball without a defender touching it?",
+    "ground_truth": "The ball must not be played into the circle until it has travelled at least 3 metres, not necessarily in a single direction, or has been touched by a defending player. The ball may also be played into the circle off the side-boards, providing that it has travelled at least 3 metres before rebounding off them. If the player taking the free push continues to play the ball, that player may play the ball any number of times, but the ball must travel at least 3 meters, not necessarily in a single direction, before.",
+    "context_guidance": "Derived from 13.2",
+    "variant": "indoor"
+  },
+  {
+    "question": "What is a flick?",
+    "ground_truth": "Pushing the ball so that it is raised off the ground.",
+    "context_guidance": "Derived from 12.2",
+    "variant": "outdoor"
+  },
+  {
+    "question": "What penalty is given for an intentional offense by a defender on an attacker in ball possession in the circle?",
+    "ground_truth": "When a defender makes an intnetional offense the penalty will be a stroke",
+    "context_guidance": "Derived from 12.4",
+    "variant": "outdoor"
+  },
+  {
+    "question": "What penalty is given for an unintentional offense by a defender that prohibits scoring of a goal?",
+    "ground_truth": "the penalty will be a stroke",
+    "context_guidance": "Derived from 12.4",
+    "variant": "outdoor"
+  },
+  {
+    "question": "Can a shot at goal during a penalty corner result in a goal?",
+    "ground_truth": "If below the backboard this will be a goal, if above, it depends if the shot at goal was the first shot attepmted and whether it was a hit. The first shot can not be high if it is a hit, while a second attempt can.",
+    "context_guidance": "Derived from 13.3",
+    "variant": "outdoor"
+  }
+]
