@@ -51,7 +51,12 @@ class DocumentAILayoutMixin:
                                       header_pattern.match(block_text) or 
                                       section_num_pattern.match(block_text))
                         
-                        if not is_special:
+                        # Heuristic: If the following text looks like content (long, ends with period),
+                        # it is NOT a section header. e.g. "36" + "The ball is round." -> Page Num + Content.
+                        # "1" + "Objectives" -> Section Header 1.
+                        looks_like_content = len(block_text) > 40 or block_text.strip().endswith(".")
+                        
+                        if not is_special and not looks_like_content:
                             # Success! "1" + "Objectives"
                             # Flush prev chunk
                             if current_chunk_text.strip():

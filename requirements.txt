@@ -15,3 +15,5 @@ sqlalchemy
 # Web App
 streamlit
 python-dotenv
+pytest
+pytest-mock
