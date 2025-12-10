@@ -1,5 +1,8 @@
 from langchain_google_vertexai import VertexAI
 import config
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 def summarize_text(text: str) -> str:
     """Summarizes text into a short, human-readable label (max 15 words)."""
@@ -28,5 +31,5 @@ def summarize_text(text: str) -> str:
         # Cleanup quotes if LLM adds them
         return summary.replace('"', '').replace("'", "")
     except Exception as e:
-        print(f"    ⚠️ Summarization failed: {e}")
+        logger.warning(f"Summarization failed: {e}")
         return "Summary unavailable"

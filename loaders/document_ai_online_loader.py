@@ -6,6 +6,9 @@ from langchain_core.documents import Document
 from .base import BaseLoader
 from .document_ai_common import DocumentAILayoutMixin
 from .utils import summarize_text
+from logger import get_logger
+
+logger = get_logger(__name__)
 import config
 from pypdf import PdfReader, PdfWriter
 import io
@@ -22,23 +25,36 @@ class DocumentAIOnlineLoader(BaseLoader, DocumentAILayoutMixin):
         opts = {"api_endpoint": f"{self.location}-documentai.googleapis.com"}
         self.docai_client = documentai.DocumentProcessorServiceClient(client_options=opts)
 
-    def load_and_chunk(self, file_path: str, variant: str, original_filename: str = None, target_pages: List[int] = None) -> List[Document]:
-        print(f" -> [DocAI Online] 1. Analyzing {file_path} for splitting...")
+    def load_and_chunk(self, file_path: str, variant: str, original_filename=None) -> List[Document]:
         
-        # Generator of Document AI Objects (Shards)
-        docai_shards = self._process_with_splitting_structural(file_path, target_pages)
+        logger.info(f"Analyzing {file_path} for splitting...")
+        # 1. Split PDF into smaller chunks (e.g. 15 pages) to fit Online Limits
+        page_groups = self._split_pdf(file_path, max_pages=15)
         
-        print(f" -> [DocAI Online] 2. Structural Chunking...")
-        chunks = self._layout_chunking(docai_shards, variant)
+        all_shards = []
+        for i, (pdf_bytes, target_pages) in enumerate(page_groups):
+            # logger.info(f"Processing Chunk with {len(target_pages)} pages...")
+            try:
+                # 2. Send to Online Processing
+                raw_document = self._process_online(pdf_bytes)
+                if raw_document:
+                   all_shards.append(raw_document)
+            except Exception as e:
+                logger.error(f"Chunk failed: {e}")
         
-        print(f" -> [DocAI Online] 3. Summarizing {len(chunks)} chunks...")
+        # 3. Layout Chunking
+        logger.info("Structural Chunking...")
+        chunks = self._layout_chunking(all_shards, variant)
+        
+        # 4. Summarization
+        logger.info(f"Summarizing {len(chunks)} chunks...")
         for i, doc in enumerate(chunks):
-            print(f"    - Summarizing chunk {i+1}/{len(chunks)}...")
-            summary = summarize_text(doc.page_content)
-            doc.metadata["summary"] = summary
-            doc.metadata["source_file"] = original_filename if original_filename else file_path.split("/")[-1]
-            if "page" not in doc.metadata:
-                doc.metadata["page"] = "unknown"
+             # logger.debug(f"Summarizing chunk {i+1}/{len(chunks)}...")
+             summary = summarize_text(doc.page_content)
+             doc.metadata["summary"] = summary
+             doc.metadata["source_file"] = original_filename if original_filename else file_path.split("/")[-1]
+             if "page" not in doc.metadata:
+                 doc.metadata["page"] = "unknown"
             
         return chunks
 
@@ -50,7 +66,7 @@ class DocumentAIOnlineLoader(BaseLoader, DocumentAILayoutMixin):
         
         pages_to_process = range(total_pages)
         if target_pages:
-            print(f"    - Filtering for specific pages: {target_pages}")
+            # logger.debug(f"Filtering for specific pages: {target_pages}")
             pages_to_process = [p for p in target_pages if 0 <= p < total_pages]
             # When filtering, we might as well process them in one chunk if small enough
             # But strictly adhering to chunk_size=15 logic is safer if they ask for many scattered pages.
@@ -80,8 +96,9 @@ class DocumentAIOnlineLoader(BaseLoader, DocumentAILayoutMixin):
         writer.write(chunk_buffer)
         chunk_content = chunk_buffer.getvalue()
         
-        print(f"    - Processing Chunk with {len(page_nums)} pages...")
-        return self._online_process_structural(chunk_content)
+        # logger.debug(f"Processing Chunk with {len(page_nums)} pages...")
+        raw_document = self._online_process_structural(chunk_content)
+        return raw_document
 
     def _online_process_structural(self, file_content: bytes) -> documentai.Document:
         """Calls Document AI Online Processing and returns full object."""
@@ -94,5 +111,5 @@ class DocumentAIOnlineLoader(BaseLoader, DocumentAILayoutMixin):
             result = self.docai_client.process_document(request=request)
             return result.document
         except Exception as e:
-            print(f"    ❌ Chunk failed: {e}")
-            return documentai.Document()
+            logger.error(f"Chunk failed: {e}")
+            return None

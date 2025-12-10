@@ -8,6 +8,9 @@ from langchain_core.documents import Document
 from .base import BaseLoader
 from .document_ai_common import DocumentAILayoutMixin
 from .utils import summarize_text
+from logger import get_logger
+
+logger = get_logger(__name__)
 import config
 import os
 
@@ -26,26 +29,33 @@ class DocumentAIBatchLoader(BaseLoader, DocumentAILayoutMixin):
         self.docai_client = documentai.DocumentProcessorServiceClient(client_options=opts)
 
     def load_and_chunk(self, file_path: str, variant: str, original_filename: str = None) -> List[Document]:
-        print(f" -> [DocAI Batch] 1. Uploading {file_path} to GCS...")
+        """Orchestrate the full Batch Ingestion Flow."""
+        
+        # 1. Upload
+        logger.info(f"Uploading {file_path} to GCS...")
         gcs_uri = self._upload_to_gcs(file_path, original_filename)
         
-        print(f" -> [DocAI Batch] 2. Submitting Batch Job...")
+        # 2. Trigger Batch Check
+        logger.info("Submitting Batch Job...")
         operation = self._batch_process(gcs_uri)
         
-        print(f" -> [DocAI Batch] 3. Waiting for completion (this may take a minute)...")
-        # Wait for operation
+        # 3. Wait LRO
+        logger.info("Waiting for completion (this may take a minute)...")
         operation.result(timeout=300)
         
         # Extract Operation ID from name: projects/.../operations/123456...
         op_id = operation.operation.name.split("/")[-1]
         
-        print(f" -> [DocAI Batch] 4. Downloading Results (Operation: {op_id})...")
+        # 4. Download JSONs
+        logger.info(f"Downloading Results (Operation: {op_id})...")
         docai_shards = self._get_results(gcs_uri, op_id)
         
-        print(f" -> [DocAI Batch] 5. Structural Chunking...")
+        # 5. Visual/Layout Chunking
+        logger.info("Structural Chunking...")
         chunks = self._layout_chunking(docai_shards, variant)
         
-        print(f" -> [DocAI Batch] 6. Summarizing {len(chunks)} chunks...")
+        # 6. Summarization / Enrichment
+        logger.info(f"Summarizing {len(chunks)} chunks...")
         for i, doc in enumerate(chunks):
             # print(f"    - Summarizing chunk {i+1}/{len(chunks)}...") # Optional verbosity
             summary = summarize_text(doc.page_content)
@@ -145,11 +155,10 @@ class DocumentAIBatchLoader(BaseLoader, DocumentAILayoutMixin):
         results = []
         for blob in blobs:
             if blob.name.endswith(".json"):
-                print(f"    - Found output: {blob.name}")
-                json_content = blob.download_as_string()
+                # logger.debug(f"Found output: {blob.name}")
+                json_content = blob.download_as_bytes()
                 doc = documentai.Document.from_json(json_content, ignore_unknown_fields=True)
                 results.append(doc)
         
         # Sort shards by page number if needed (usually handled by list order, 
         # but DocAI output is often one file unless huge. Multi-file output logic might be needed for huge files)
-        return results
