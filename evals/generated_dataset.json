@@ -136,5 +136,12 @@
     "ground_truth": "If below the backboard this will be a goal, if above, it depends if the shot at goal was the first shot attepmted and whether it was a hit. The first shot can not be high if it is a hit, while a second attempt can.",
     "context_guidance": "Derived from 13.3",
     "variant": "outdoor"
+  },
+  {
+    "question": "In indoor hockey, what action is required of a player who has been permanently suspended during a match?",
+    "ground_truth": "The player must leave the pitch and its surrounding area.",
+    "source_text": "14.5 Permanently suspended players must leave the pitch and its\nsurrounding area. 41",
+    "context_guidance": "Derived from 14.5",
+    "variant": "indoor"
   }
 ]

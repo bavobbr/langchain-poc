@@ -9,15 +9,15 @@ from typing import List, Dict
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
-from rag_engine import FIHRulesEngine
+from evals.adapters import BotAdapter, RAGBotAdapter, MockBotAdapter
 from langchain_google_vertexai import VertexAI
 from logger import get_logger
 
 logger = get_logger(__name__)
 
-class RAGEvaluator:
-    def __init__(self):
-        self.engine = FIHRulesEngine()
+class BotEvaluator:
+    def __init__(self, bot_adapter: BotAdapter):
+        self.bot = bot_adapter
         self.judge_llm = VertexAI(
             model_name=config.LLM_MODEL,
             project=config.PROJECT_ID,
@@ -46,23 +46,37 @@ class RAGEvaluator:
             
             logger.info(f"Evaluating Q{i+1}: {question[:50]}...")
             
-            # 1. Get Bot Answer
-            # We bypass the history/chat wrapper and Query directly
-            # Engine signature: query(user_input, history=[])
-            response = self.engine.query(question, history=[])
-            bot_answer = response["answer"]
+            # 1. Get Bot Answer via Adapter
+            try:
+                response = self.bot.query(question)
+                bot_answer = response.get("answer", "")
+            except Exception as e:
+                logger.error(f"Bot failed to answer: {e}")
+                bot_answer = "ERROR"
+                response = {}
             
-            # 2. Grade It
+            # 2. Check Retrieval Hit Rate
+            # We check if the source_text (if present) is found in the retrieved docs
+            source_text = item.get("source_text")
+            is_hit = False
+            if source_text:
+                for doc in response.get("source_docs", []):
+                    if doc.page_content == source_text:
+                        is_hit = True
+                        break
+            
+            # 3. Grade Answer
             score, reasoning = self._grade_answer(question, ground_truth, bot_answer)
             score_sum += score
             
-            logger.info(f"  -> Score: {score}/1. Reason: {reasoning[:50]}...")
+            logger.info(f"  -> Score: {score}/1. Hit: {is_hit}. Reason: {reasoning[:50]}...")
             
             results.append({
                 "question": question,
                 "ground_truth": ground_truth,
                 "bot_answer": bot_answer,
                 "score": score,
+                "retrieval_hit": is_hit if source_text else None,
                 "reasoning": reasoning
             })
             
@@ -70,13 +84,22 @@ class RAGEvaluator:
             time.sleep(1)
             
         accuracy = (score_sum / len(dataset)) * 100
-        logger.info(f"Evaluation Complete. Accuracy: {accuracy:.2f}%")
+        
+        # Calculate Hit Rate (only for items that had source_text)
+        items_with_source = [r for r in results if r["retrieval_hit"] is not None]
+        hit_rate = 0.0
+        if items_with_source:
+            hits = sum(1 for r in items_with_source if r["retrieval_hit"])
+            hit_rate = (hits / len(items_with_source)) * 100
+            
+        logger.info(f"Evaluation Complete. Accuracy: {accuracy:.2f}%. Retrieval Hit Rate: {hit_rate:.2f}%")
         
         # Save detailed report
         report_path = "evals/report_latest.json"
         with open(report_path, "w") as f:
             json.dump({
                 "accuracy": accuracy,
+                "hit_rate": hit_rate,
                 "details": results
             }, f, indent=2)
             
@@ -112,6 +135,17 @@ class RAGEvaluator:
             logger.error(f"Grading failed: {e}")
             return 0, "Grading Failed"
 
+import argparse
+
 if __name__ == "__main__":
-    evaluator = RAGEvaluator()
+    parser = argparse.ArgumentParser(description="Run Evaluation on a specific Bot implementation.")
+    parser.add_argument("--bot", type=str, default="rag", choices=["rag", "mock"], help="Which bot adapter to use.")
+    args = parser.parse_args()
+    
+    if args.bot == "mock":
+        adapter = MockBotAdapter()
+    else:
+        adapter = RAGBotAdapter()
+        
+    evaluator = BotEvaluator(adapter)
     evaluator.evaluate_dataset()

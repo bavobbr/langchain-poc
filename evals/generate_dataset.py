@@ -91,6 +91,7 @@ def generate_qa_pairs(limit: int = 10, variant: str = "indoor") -> List[Dict]:
             entry = {
                 "question": qa.get("question"),
                 "ground_truth": qa.get("answer"),
+                "source_text": content,
                 "context_guidance": f"Derived from {heading}",
                 "variant": variant
             }

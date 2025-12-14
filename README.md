@@ -360,6 +360,34 @@ Note on large files
 
 ---
 
+## Evaluation System (Metric-Driven Development)
+
+We implemented a **Synthetic Evaluation Pipeline** to quantify the performance of the bot before and after making changes. This ensures reliability and allows us to benchmark different architectures (RAG vs Agents).
+
+### Components
+1.  **Generator (`evals/generate_dataset.py`)**: Bootstraps a "Golden Dataset" by fetching random chunks from the DB and asking **Gemini** to generate complex QA pairs. It also tracks the `source_text` to measure retrieval performance.
+2.  **Judge (`evals/evaluate.py`)**: Runs the dataset against the bot and uses an **LLM-as-a-Judge** (Vertex AI) to grade the answers.
+
+### Key Metrics
+*   **Accuracy:** The percentage of answers graded as "Correct" (Score 1) by the Judge LLM, based on semantic factual agreement with the Ground Truth.
+*   **Retrieval Hit Rate:** The percentage of times the *exact source text* used to generate the question appears in the top retrieved documents. High Hit Rate + Low Accuracy = Bad Reasoning. Low Hit Rate = Bad Search.
+
+### Multi-Bot Support
+The system uses an **Adapter Pattern** to evaluate different bot implementations using the same dataset.
+
+```bash
+# 1. Generate Data (Append to existing)
+python evals/generate_dataset.py --limit 10 --variant indoor
+
+# 2. Evaluate default RAG Engine
+python evals/evaluate.py --bot rag
+
+# 3. Evaluate a Mock Bot (for testing pipeline)
+python evals/evaluate.py --bot mock
+```
+
+---
+
 ## Deployment (Google Cloud Run)
 
 To deploy the application as a public web service:
