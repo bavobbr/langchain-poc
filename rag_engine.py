@@ -127,7 +127,7 @@ class FIHRulesEngine:
             }
 
         full_prompt = f"""
-        Expert FIH Umpire for {detected_variant.upper()}. 
+        Expert FIH international Field Hockey Umpire for {detected_variant.upper()}. 
         Answer based on Context. Cite Rules.
         
         CONTEXT:
@@ -149,7 +149,7 @@ class FIHRulesEngine:
         """Rewrite the latest user message as a standalone query."""
         if not history: return query
         history_str = "\n".join([f"{role}: {txt}" for role, txt in history[-4:]])
-        prompt = f"""Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
+        prompt = f"""Given the following conversation and a follow up question about Field Hockey, rephrase the follow up question to be a standalone question.
         
         Do NOT answer the question. Just rewrite it to be self-contained. Start the question with whether the question is about outdoor, indoor or hockey5s variant.
         If not clear from context, default to outdoor.
@@ -164,5 +164,5 @@ class FIHRulesEngine:
 
     def _route_query(self, query):
         """Return 'outdoor' | 'indoor' | 'hockey5s' based on content."""
-        prompt = f"Analyze Field Hockey question. Return 'outdoor', 'indoor', or 'hockey5s'. Default to 'outdoor'.\nQUESTION: {query}"
+        prompt = f"Analyze Field Hockey question and categorize it as outdoor, indoor or hockey5s variant. Return 'outdoor', 'indoor', or 'hockey5s'. Default to 'outdoor'.\nQUESTION: {query}"
         return self.llm.invoke(prompt).strip().lower().replace("'", "").replace('"', "")

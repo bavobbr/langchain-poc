@@ -371,6 +371,7 @@ We implemented a **Synthetic Evaluation Pipeline** to quantify the performance o
 ### Key Metrics
 *   **Accuracy:** The percentage of answers graded as "Correct" (Score 1) by the Judge LLM, based on semantic factual agreement with the Ground Truth.
 *   **Retrieval Hit Rate:** The percentage of times the *exact source text* used to generate the question appears in the top retrieved documents. High Hit Rate + Low Accuracy = Bad Reasoning. Low Hit Rate = Bad Search.
+*   **Rule Citation Rate:** The percentage of answers that explicitly verify their claims by citing the correct Rule Number (e.g., "Rule 9.12") derived from the ground truth context. This enforces "evidence-based" answers.
 
 ### Multi-Bot Support
 The system uses an **Adapter Pattern** to evaluate different bot implementations using the same dataset.

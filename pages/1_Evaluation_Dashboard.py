@@ -99,9 +99,12 @@ if details:
             "context_recall": st.column_config.ProgressColumn("Recall", min_value=0, max_value=1, format="%.2f"),
         })
         
-        display_cols = ["question", "score", "retrieval_hit", "citation_hit", "faithfulness", "answer_relevancy", "context_precision", "context_recall"]
+        wanted_cols = ["question", "score", "retrieval_hit", "citation_hit", "faithfulness", "answer_relevancy", "context_precision", "context_recall"]
     else:
-        display_cols = ["question", "score", "retrieval_hit", "citation_hit", "reasoning"]
+        wanted_cols = ["question", "score", "retrieval_hit", "citation_hit", "reasoning"]
+
+    # Filter columns that actually exist in the dataframe to avoid KeyErrors
+    display_cols = [c for c in wanted_cols if c in df.columns]
 
     st.dataframe(
         df[display_cols],
