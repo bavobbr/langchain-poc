@@ -2,6 +2,7 @@ from .base import BaseLoader
 from .unstructured_loader import UnstructuredLoader
 from .document_ai_online_loader import DocumentAIOnlineLoader
 from .document_ai_batch_loader import DocumentAIBatchLoader
+import logging
 import config
 
 logger = logging.getLogger(__name__)

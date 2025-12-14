@@ -45,7 +45,7 @@ def generate_qa_pairs(limit: int = 10, variant: str = "indoor") -> List[Dict]:
             AND (
                 -- Match headings like "9.12", "Rule 9.1", "Rule 10"
                 -- Postgres regex for "Starts with Rule<space>Digit OR Digit.Digit"
-                metadata->>'heading' ~* '^(Rule\s+[0-9]+|[0-9]+\.[0-9]+)'
+                metadata->>'heading' ~* r'^(Rule\s+[0-9]+|[0-9]+\.[0-9]+)'
             )
             ORDER BY RANDOM() 
             LIMIT :limit
@@ -83,10 +83,8 @@ def generate_qa_pairs(limit: int = 10, variant: str = "indoor") -> List[Dict]:
         
         try:
             response = llm.invoke(prompt).strip()
-            # Clean generic markdown code blocks if present
-            response = response.replace("```json", "").replace("```", "")
             
-            qa = json.loads(response)
+            qa = parse_json_response(response)
             
             entry = {
                 "question": qa.get("question"),
@@ -102,6 +100,11 @@ def generate_qa_pairs(limit: int = 10, variant: str = "indoor") -> List[Dict]:
             logger.error(f"Failed to generate QA for chunk: {e}")
             
     return qa_dataset
+
+def parse_json_response(response_text: str) -> Dict:
+    """Parses LLM JSON output, handling markdown code blocks."""
+    cleaned = response_text.replace("```json", "").replace("```", "").strip()
+    return json.loads(cleaned)
 
 import argparse
 

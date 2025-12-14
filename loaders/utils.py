@@ -6,7 +6,7 @@ logger = get_logger(__name__)
 
 def summarize_text(text: str) -> str:
     """Summarizes text into a short, human-readable label (max 15 words)."""
-    if not text.strip():
+    if not text or not text.strip():
         return ""
         
     llm = VertexAI(

@@ -3,9 +3,7 @@ import logging
 import json
 import sys
 
-import logging
-import json
-import sys
+
 import config
 
 # ANSI Colors for local development
