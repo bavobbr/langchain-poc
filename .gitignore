@@ -29,5 +29,3 @@ debug_output/
 
 # Node (if used for tools)
 node_modules/
-
-evals/report_latest.json

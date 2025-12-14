@@ -10,8 +10,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
 from evals.adapters import BotAdapter, RAGBotAdapter, MockBotAdapter
-from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import VertexAI, VertexAIEmbeddings
 from logger import get_logger
+from datasets import Dataset
+from ragas import evaluate
+from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
 
 logger = get_logger(__name__)
 
@@ -22,7 +25,14 @@ class BotEvaluator:
             model_name=config.LLM_MODEL,
             project=config.PROJECT_ID,
             location=config.REGION,
-            temperature=0 # Zero temp for consistent grading
+            temperature=0, # Zero temp for consistent grading
+            max_retries=3,
+            request_timeout=120
+        )
+        self.embeddings = VertexAIEmbeddings(
+            model_name=config.EMBEDDING_MODEL,
+            project=config.PROJECT_ID,
+            location=config.REGION
         )
 
     def evaluate_dataset(self, dataset_path: str = "evals/generated_dataset.json"):
@@ -39,6 +49,14 @@ class BotEvaluator:
         results = []
         score_sum = 0
         
+        # RAGAS Data Collection
+        ragas_data = {
+            'question': [],
+            'answer': [],
+            'contexts': [],
+            'ground_truth': []
+        }
+        
         for i, item in enumerate(dataset):
             question = item["question"]
             ground_truth = item["ground_truth"]
@@ -50,26 +68,34 @@ class BotEvaluator:
             try:
                 response = self.bot.query(question)
                 bot_answer = response.get("answer", "")
+                source_docs = response.get("source_docs", [])
             except Exception as e:
                 logger.error(f"Bot failed to answer: {e}")
                 bot_answer = "ERROR"
+                source_docs = []
                 response = {}
             
+            # Collect for RAGAS
+            ragas_data['question'].append(question)
+            ragas_data['answer'].append(bot_answer)
+            ragas_data['contexts'].append([doc.page_content for doc in source_docs])
+            ragas_data['ground_truth'].append(ground_truth)
+
             # 2. Check Retrieval Hit Rate
             # We check if the source_text (if present) is found in the retrieved docs
             source_text = item.get("source_text")
             is_hit = False
             if source_text:
-                for doc in response.get("source_docs", []):
+                for doc in source_docs:
                     if doc.page_content == source_text:
                         is_hit = True
                         break
             
-            # 3. Grade Answer
+            # 3. Grade Answer (Custom Model)
             score, reasoning = self._grade_answer(question, ground_truth, bot_answer)
             score_sum += score
             
-            logger.info(f"  -> Score: {score}/1. Hit: {is_hit}. Reason: {reasoning[:50]}...")
+            logger.info(f"  -> Score: {score}/1. Hit: {is_hit}.")
             
             results.append({
                 "question": question,
@@ -83,6 +109,7 @@ class BotEvaluator:
             # Rate limit politeness
             time.sleep(1)
             
+        # --- Custom Metrics ---
         accuracy = (score_sum / len(dataset)) * 100
         
         # Calculate Hit Rate (only for items that had source_text)
@@ -92,14 +119,50 @@ class BotEvaluator:
             hits = sum(1 for r in items_with_source if r["retrieval_hit"])
             hit_rate = (hits / len(items_with_source)) * 100
             
-        logger.info(f"Evaluation Complete. Accuracy: {accuracy:.2f}%. Retrieval Hit Rate: {hit_rate:.2f}%")
+        logger.info(f"Custom Stats -> Accuracy: {accuracy:.2f}%. Retrieval Hit Rate: {hit_rate:.2f}%")
         
+        # --- RAGAS Metrics ---
+        logger.info("Running RAGAS evaluation (this takes a moment)...")
+        ragas_dataset = Dataset.from_dict(ragas_data)
+        
+        # Need to wrap VertexAI for Ragas compatibility if needed, 
+        # but usually passing the langchain object works for newer ragas versions.
+        # Ragas uses 'llm' and 'embeddings' args.
+        try:
+            ragas_scores = evaluate(
+                ragas_dataset,
+                metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+                llm=self.judge_llm,
+                embeddings=self.embeddings
+            )
+            ragas_result_mean = ragas_scores.to_pandas().mean(numeric_only=True).to_dict()
+            ragas_result_df = ragas_scores.to_pandas()
+            
+            logger.info(f"RAGAS Scores: {ragas_result_mean}")
+            
+            # Merge RAGAS scores back into results
+            for idx, row in ragas_result_df.iterrows():
+                if idx < len(results):
+                    results[idx]["ragas"] = {
+                        "faithfulness": row.get("faithfulness"),
+                        "answer_relevancy": row.get("answer_relevancy"),
+                        "context_precision": row.get("context_precision"),
+                        "context_recall": row.get("context_recall")
+                    }
+
+        except Exception as e:
+            logger.error(f"RAGAS evaluation failed: {e}")
+            ragas_result_mean = {"error": str(e)}
+
         # Save detailed report
         report_path = "evals/report_latest.json"
         with open(report_path, "w") as f:
             json.dump({
-                "accuracy": accuracy,
-                "hit_rate": hit_rate,
+                "custom_metrics": {
+                    "accuracy": accuracy,
+                    "hit_rate": hit_rate
+                },
+                "ragas_metrics": ragas_result_mean,
                 "details": results
             }, f, indent=2)
             

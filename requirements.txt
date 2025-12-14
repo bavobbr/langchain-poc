@@ -17,3 +17,6 @@ streamlit
 python-dotenv
 pytest
 pytest-mock
+ragas==0.4.1
+pandas==2.3.3
+plotly==6.5.0
