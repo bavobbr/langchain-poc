@@ -26,8 +26,7 @@ class BotEvaluator:
             project=config.PROJECT_ID,
             location=config.REGION,
             temperature=0, # Zero temp for consistent grading
-            max_retries=3,
-            request_timeout=120
+            max_retries=3
         )
         self.embeddings = VertexAIEmbeddings(
             model_name=config.EMBEDDING_MODEL,
@@ -82,7 +81,6 @@ class BotEvaluator:
             ragas_data['ground_truth'].append(ground_truth)
 
             # 2. Check Retrieval Hit Rate
-            # We check if the source_text (if present) is found in the retrieved docs
             source_text = item.get("source_text")
             is_hit = False
             if source_text:
@@ -91,11 +89,15 @@ class BotEvaluator:
                         is_hit = True
                         break
             
-            # 3. Grade Answer (Custom Model)
+            # 3. Check Rule Citation (New Metric)
+            context_guidance = item.get("context_guidance", "")
+            citation_hit = self._check_citation(bot_answer, context_guidance)
+
+            # 4. Grade Answer (Custom Model)
             score, reasoning = self._grade_answer(question, ground_truth, bot_answer)
             score_sum += score
             
-            logger.info(f"  -> Score: {score}/1. Hit: {is_hit}.")
+            logger.info(f"  -> Score: {score}/1. Hit: {is_hit}. Cited: {citation_hit}.")
             
             results.append({
                 "question": question,
@@ -103,6 +105,8 @@ class BotEvaluator:
                 "bot_answer": bot_answer,
                 "score": score,
                 "retrieval_hit": is_hit if source_text else None,
+                "citation_hit": citation_hit,
+                "context_guidance": context_guidance,
                 "reasoning": reasoning
             })
             
@@ -119,7 +123,14 @@ class BotEvaluator:
             hits = sum(1 for r in items_with_source if r["retrieval_hit"])
             hit_rate = (hits / len(items_with_source)) * 100
             
-        logger.info(f"Custom Stats -> Accuracy: {accuracy:.2f}%. Retrieval Hit Rate: {hit_rate:.2f}%")
+        # Calculate Citation Rate (only for items that had context_guidance)
+        items_with_guidance = [r for r in results if r["context_guidance"]]
+        citation_rate = 0.0
+        if items_with_guidance:
+            cites = sum(1 for r in items_with_guidance if r["citation_hit"])
+            citation_rate = (cites / len(items_with_guidance)) * 100
+            
+        logger.info(f"Custom Stats -> Accuracy: {accuracy:.2f}%. Hit Rate: {hit_rate:.2f}%. Citation Rate: {citation_rate:.2f}%")
         
         # --- RAGAS Metrics ---
         logger.info("Running RAGAS evaluation (this takes a moment)...")
@@ -160,13 +171,35 @@ class BotEvaluator:
             json.dump({
                 "custom_metrics": {
                     "accuracy": accuracy,
-                    "hit_rate": hit_rate
+                    "hit_rate": hit_rate,
+                    "citation_rate": citation_rate
                 },
                 "ragas_metrics": ragas_result_mean,
                 "details": results
             }, f, indent=2)
             
         return accuracy
+
+    def _check_citation(self, bot_answer, context_guidance):
+        """
+        Checks if the bot cited the rule mentioned in context_guidance.
+        context_guidance format: "Derived from 9.12" or "Derived from Rule 9.12"
+        """
+        if not context_guidance:
+            return None
+            
+        # Extract the rule number(s)
+        # We look for digits/dots at the end
+        import re
+        match = re.search(r"([\d\.]+)", context_guidance.replace("Derived from", ""))
+        if not match:
+            return None
+            
+        rule_number = match.group(0).strip()
+        
+        # Permissive check: Is this rule number in the answer?
+        # We check for "Rule 9.12", "[9.12]", "(9.12)" or just "9.12" if surrounded by spaces/punctuation
+        return rule_number in bot_answer
 
     def _grade_answer(self, question, ground_truth, bot_answer):
         """Asks LLM to judge the answer."""

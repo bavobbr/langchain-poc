@@ -151,7 +151,8 @@ class FIHRulesEngine:
         history_str = "\n".join([f"{role}: {txt}" for role, txt in history[-4:]])
         prompt = f"""Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
         
-        Do NOT answer the question. Just rewrite it to be self-contained.
+        Do NOT answer the question. Just rewrite it to be self-contained. Start the question with whether the question is about outdoor, indoor or hockey5s variant.
+        If not clear from context, default to outdoor.
         
         Chat History:
         {history_str}

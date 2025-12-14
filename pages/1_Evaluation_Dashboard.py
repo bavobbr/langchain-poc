@@ -31,20 +31,19 @@ cols = st.columns(4)
 custom = data.get("custom_metrics", {})
 accuracy = custom.get("accuracy", 0)
 hit_rate = custom.get("hit_rate", 0)
+citation_rate = custom.get("citation_rate", 0)
 
-cols[0].metric("Bot Accuracy (Correctness)", f"{accuracy:.1f}%", help="Percentage of answers graded 'Correct' by LLM Judge")
-cols[1].metric("Retrieval Hit Rate", f"{hit_rate:.1f}%", help="Percentage of times the source text was in the top retrieved chunks")
+cols[0].metric("Bot Accuracy", f"{accuracy:.1f}%", help="Percentage of answers graded 'Correct'")
+cols[1].metric("Retrieval Hit Rate", f"{hit_rate:.1f}%", help="Correct source text found in retrieval")
+cols[2].metric("Rule Citation Rate", f"{citation_rate:.1f}%", help="Correct Rule Number cited in answer")
 
 # RAGAS Metrics
 ragas = data.get("ragas_metrics", {})
 if ragas:
     faithfulness = ragas.get("faithfulness", 0) * 100
-    relevancy = ragas.get("answer_relevancy", 0) * 100
     precision = ragas.get("context_precision", 0) * 100
-    recall = ragas.get("context_recall", 0) * 100
     
-    cols[2].metric("Faithfulness (RAGAS)", f"{faithfulness:.1f}%", help="Prevention of Hallucinations")
-    cols[3].metric("Context Precision (RAGAS)", f"{precision:.1f}%", help="Signal-to-Noise Ratio of Retrieval")
+    cols[3].metric("RAGAS Faithfulness", f"{faithfulness:.1f}%", help="Factuality check")
 
     # Radar Chart or Bar Chart
     st.subheader("🔍 RAGAS Deep Dive")
@@ -88,6 +87,7 @@ if details:
         "question": st.column_config.TextColumn("Question", width="medium", help="The user query"),
         "score": st.column_config.NumberColumn("Acc", format="%d", help="Judge Score (0/1)"),
         "retrieval_hit": st.column_config.CheckboxColumn("Hit?", help="Did we find the source chunk?"),
+        "citation_hit": st.column_config.CheckboxColumn("cited?", help="Did the bot cite the rule number?"),
     }
     
     # Add RAGAS columns if they exist
@@ -99,9 +99,9 @@ if details:
             "context_recall": st.column_config.ProgressColumn("Recall", min_value=0, max_value=1, format="%.2f"),
         })
         
-        display_cols = ["question", "score", "retrieval_hit", "faithfulness", "answer_relevancy", "context_precision", "context_recall"]
+        display_cols = ["question", "score", "retrieval_hit", "citation_hit", "faithfulness", "answer_relevancy", "context_precision", "context_recall"]
     else:
-        display_cols = ["question", "score", "retrieval_hit", "reasoning"]
+        display_cols = ["question", "score", "retrieval_hit", "citation_hit", "reasoning"]
 
     st.dataframe(
         df[display_cols],
