@@ -150,9 +150,9 @@ class FIHRulesEngine:
         if not history: return query
         history_str = "\n".join([f"{role}: {txt}" for role, txt in history[-4:]])
         prompt = f"""Given the following conversation and a follow up question about Field Hockey, rephrase the follow up question to be a standalone question.
-        
-        Do NOT answer the question. Just rewrite it to be self-contained. Start the question with whether the question is about outdoor, indoor or hockey5s variant.
-        If not clear from context, default to outdoor.
+        Do NOT answer the question. Just rewrite it to be self-contained and have all the relevant context provided.
+        First analyze the hockey variant (outdoor, indoor, hockey5s) from the given context.If not clear from context, default to outdoor. Add the variant to the standalone question in the form of:
+        In <variant>: <question>
         
         Chat History:
         {history_str}
