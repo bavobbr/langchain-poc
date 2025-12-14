@@ -367,6 +367,7 @@ We implemented a **Synthetic Evaluation Pipeline** to quantify the performance o
 ### Components
 1.  **Generator (`evals/generate_dataset.py`)**: Bootstraps a "Golden Dataset" by fetching random chunks from the DB and asking **Gemini** to generate complex QA pairs. It also tracks the `source_text` to measure retrieval performance.
 2.  **Judge (`evals/evaluate.py`)**: Runs the dataset against the bot and uses an **LLM-as-a-Judge** (Vertex AI) to grade the answers.
+3.  **QA Strategy**: For a deep dive into our testing architecture (Unit Tests, RAGAS, BotEvaluator), see **[TESTING.md](TESTING.md)**.
 
 ### Key Metrics
 *   **Accuracy:** The percentage of answers graded as "Correct" (Score 1) by the Judge LLM, based on semantic factual agreement with the Ground Truth.
