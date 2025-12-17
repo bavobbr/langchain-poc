@@ -135,3 +135,23 @@ if __name__ == "__main__":
         json.dump(final_dataset, f, indent=2)
         
     logger.info(f"Added {len(new_dataset)} new pairs. Total: {len(final_dataset)} saved to {output_file}")
+
+prompt = f"""
+        You are an expert examiner for Field Hockey Rules.
+        Your goal is to create a difficult question based on the text below.
+        
+        TEXT:
+        {content}
+        
+        VARIANT: {variant}
+        
+        INSTRUCTIONS:
+        1. Write a specific question that can be answered primarily using this text.
+        2. **CRITICAL: You MUST explicitly mention "{variant}" in the question text** (e.g. "In {variant} hockey, what is...").
+        3. Provide the correct answer based on the text.
+        4. Output JSON format only: {{"question": "...", "answer": "..."}}
+        
+        JSON Output:
+        """
+        
+response = llm.invoke(prompt).strip()
