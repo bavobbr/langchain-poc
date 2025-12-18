@@ -7,6 +7,8 @@ This guide helps contributors work efficiently in this LangChain + Streamlit RAG
 We follow a modular **MVC + Repository** pattern. See [README.md](README.md) for a detailed breakdown.
 
 - `app.py` – Streamlit UI and session state (View).
+- `api.py` – Headless FastAPI server (API).
+- `web/` – Modern React + Vite UI (View).
 - `rag_engine.py` – Orchestration, chunking, retrieval, LLM calls (Controller).
 - `database.py` – Raw SQL + connectors for Cloud SQL/Postgres (Model/Repository).
 - `config.py` – Configuration constants (project, region, DB, table names).
@@ -23,9 +25,13 @@ We follow a modular **MVC + Repository** pattern. See [README.md](README.md) for
   - `python3 -m venv .venv && source .venv/bin/activate`
   - `pip install -r requirements.txt`
 - Install dev tools: `make dev-install`
+- Frontend Setup (optional):
+  - `cd web && npm install`
 
 ### Run Locally
 - Streamlit UI: `streamlit run app.py`
+- Modern UI: `cd web && npm run dev` (requires running API)
+- Headless API: `uvicorn api:app --reload`
 
 ### Testing & Evaluation
 We have a comprehensive testing strategy detailed in [TESTING.md](TESTING.md).

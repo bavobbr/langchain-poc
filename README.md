@@ -17,7 +17,9 @@ This project is built on **Google Cloud Platform (GCP)** using a "Raw SQL" appro
 | **Embeddings** | **Vertex AI** | Uses `text-embedding-004` for vector generation. |
 | **Vector DB** | **Cloud SQL** | PostgreSQL 15 + `pgvector`. Accessed via **Raw SQL (`pg8000`)** for maximum control. |
 | **Reasoning** | **Gemini 2.0 Flash Lite** | LLM for synthesis and legal reasoning. |
-| **Frontend** | **Streamlit** | Interactive web interface with Session State. |
+| **Frontend (Prototype)** | **Streamlit** | Interactive web interface with Session State. |
+| **Frontend (Modern)** | **React + Vite** | Responsive, production-ready UI. |
+| **API** | **FastAPI** | Headless REST API for the RAG engine. |
 | **Hosting** | **Cloud Run** | Serverless container deployment (1GB RAM). |
 
 ### Ingestion flow
@@ -243,7 +245,9 @@ We follow a modular **MVC + Repository** pattern:
 
 ```text
 .
-├── app.py                 # (View) Streamlit UI & Session State
+├── api.py                 # (API) FastAPI Headless Server
+├── web/                   # (View) Modern React + Vite UI
+├── app.py                 # (View) Streamlit Prototype UI
 ├── loaders/               # Document Ingestion Strategy Pattern
 ├── rag_engine.py          # (Controller) Orchestrates AI, Chunking, and Context logic
 ├── database.py            # (Model/Repository) Raw SQL handling & DB Connections
@@ -334,6 +338,33 @@ gcloud auth application-default login
 # Run the app
 streamlit run app.py
 ```
+
+---
+
+## Alternative Interfaces
+
+### 1. Headless API (FastAPI)
+For a pure backend experience or to power custom frontends, use the FastAPI server:
+
+```bash
+# Run the API server
+uvicorn api:app --reload
+```
+
+- **Endpoints**:
+  - `GET /health`: Health check.
+  - `POST /chat`: Main RAG endpoint.
+
+### 2. Modern UI (React + Vite)
+The production-ready frontend is located in the `web/` directory.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+This will launch the React application at `http://localhost:5173`.
 
 ---
 
