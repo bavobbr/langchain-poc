@@ -88,8 +88,14 @@ class FIHRulesEngine:
         detected_variant = self._route_query(standalone_query)
         if detected_variant not in config.VARIANTS: 
             detected_variant = "outdoor"
+        # Clean query for embedding (propagate intent, not routing instruction)
+        import re
+        # Remove [VARIANT: ...] prefix to avoid semantic drift
+        # Matches "[VARIANT: indoor] Can I..." or "[VARIANT: indoor hockey] Can I..."
+        clean_query = re.sub(r"^\[VARIANT:.*?\]\s*", "", standalone_query, flags=re.IGNORECASE)
+        
         # Embed query
-        query_vector = self.embeddings.embed_query(standalone_query)
+        query_vector = self.embeddings.embed_query(clean_query)
         # Retrieve
         results = self.db.search(query_vector, detected_variant, k=config.RETRIEVAL_K)
         
@@ -151,8 +157,14 @@ class FIHRulesEngine:
         history_str = "\n".join([f"{role}: {txt}" for role, txt in history[-4:]])
         prompt = f"""Given the following conversation and a follow up question about Field Hockey, rephrase the follow up question to be a standalone question.
         Do NOT answer the question. Just rewrite it to be self-contained and have all the relevant context provided.
-        First analyze the hockey variant (outdoor, indoor, hockey5s) from the given context.If not clear from context, default to outdoor. Add the variant to the standalone question in the form of:
-        In <variant>: <question>
+        First analyze the hockey variant (outdoor, indoor, hockey5s) from the given context. If not clear from context, default to outdoor. 
+        Prepend the variant in a strict format: [VARIANT: <variant>]
+        
+        Example question:
+        In indoor hockey can a player hit the ball?
+
+        Example output:
+        [VARIANT: indoor] Can a player hit the ball?
         
         Chat History:
         {history_str}

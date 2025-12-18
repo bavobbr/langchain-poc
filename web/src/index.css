@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: light, dark, corporate, bumblebee, cyberpunk, retro, valentine;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Markdown Styles inside Chat Bubbles */
+.markdown ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+}
+
+.markdown ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+}
+
+.markdown a {
+  text-decoration: underline;
+  color: inherit;
+  font-weight: bold;
+}
+
+.markdown strong {
+  font-weight: bold;
+}

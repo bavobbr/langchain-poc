@@ -25,22 +25,15 @@ class DocumentAIOnlineLoader(BaseLoader, DocumentAILayoutMixin):
         opts = {"api_endpoint": f"{self.location}-documentai.googleapis.com"}
         self.docai_client = documentai.DocumentProcessorServiceClient(client_options=opts)
 
-    def load_and_chunk(self, file_path: str, variant: str, original_filename=None) -> List[Document]:
+    def load_and_chunk(self, file_path: str, variant: str, original_filename=None, target_pages: List[int] = None) -> List[Document]:
         
         logger.info(f"Analyzing {file_path} for splitting...")
-        # 1. Split PDF into smaller chunks (e.g. 15 pages) to fit Online Limits
-        page_groups = self._split_pdf(file_path, max_pages=15)
         
         all_shards = []
-        for i, (pdf_bytes, target_pages) in enumerate(page_groups):
-            # logger.info(f"Processing Chunk with {len(target_pages)} pages...")
-            try:
-                # 2. Send to Online Processing
-                raw_document = self._process_online(pdf_bytes)
-                if raw_document:
-                   all_shards.append(raw_document)
-            except Exception as e:
-                logger.error(f"Chunk failed: {e}")
+        # Use existing splitting logic which handles batching and API calls
+        for raw_document in self._process_with_splitting_structural(file_path, target_pages=target_pages):
+            if raw_document:
+                all_shards.append(raw_document)
         
         # 3. Layout Chunking
         logger.info("Structural Chunking...")
