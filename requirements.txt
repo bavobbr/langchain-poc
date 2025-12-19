@@ -6,6 +6,8 @@ unstructured[pdf]
 pdfplumber
 google-cloud-documentai
 google-cloud-storage
+pypdf
+google-genai
 
 # Database Drivers (The "Raw SQL" Stack)
 cloud-sql-python-connector[pg8000]

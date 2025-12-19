@@ -8,7 +8,13 @@ import config
 logger = logging.getLogger(__name__)
 
 def get_document_ai_loader():
-    """Factory to return the configured Document AI loader."""
+    """Factory: Returns the configured Loader based on config.py strategy."""
+    if config.LOADER_STRATEGY == "vertex_ai":
+        logger.info(" [Factory] returning Vertex AI Loader (Gemini Structure + DocAI Batch)")
+        from .vertex_ai_loader import VertexAILoader
+        return VertexAILoader()
+    
+    # Default to Document AI (Online/Batch)
     if config.DOCAI_INGESTION_MODE == "batch":
         logger.info(" [Factory] returning Batch Loader (Async/GCS)")
         return DocumentAIBatchLoader()
