@@ -38,14 +38,14 @@ def generate_qa_pairs(limit: int = 10, variant: str = "indoor") -> List[Dict]:
         # Sample random rows
         # Note: TABLESAMPLE is fast but requires non-zero rows. 
         # Fallback to simple RANDOM() sort for small datasets.
-        sql = text(f"""
+        sql = text(rf"""
             SELECT content, metadata 
             FROM {config.TABLE_NAME} 
             WHERE variant = :variant 
             AND (
                 -- Match headings like "9.12", "Rule 9.1", "Rule 10"
                 -- Postgres regex for "Starts with Rule<space>Digit OR Digit.Digit"
-                metadata->>'heading' ~* r'^(Rule\s+[0-9]+|[0-9]+\.[0-9]+)'
+                metadata->>'heading' ~* '^(Rule\s+[0-9]+|[0-9]+\.[0-9]+)'
             )
             ORDER BY RANDOM() 
             LIMIT :limit
@@ -135,23 +135,3 @@ if __name__ == "__main__":
         json.dump(final_dataset, f, indent=2)
         
     logger.info(f"Added {len(new_dataset)} new pairs. Total: {len(final_dataset)} saved to {output_file}")
-
-prompt = f"""
-        You are an expert examiner for Field Hockey Rules.
-        Your goal is to create a difficult question based on the text below.
-        
-        TEXT:
-        {content}
-        
-        VARIANT: {variant}
-        
-        INSTRUCTIONS:
-        1. Write a specific question that can be answered primarily using this text.
-        2. **CRITICAL: You MUST explicitly mention "{variant}" in the question text** (e.g. "In {variant} hockey, what is...").
-        3. Provide the correct answer based on the text.
-        4. Output JSON format only: {{"question": "...", "answer": "..."}}
-        
-        JSON Output:
-        """
-        
-response = llm.invoke(prompt).strip()

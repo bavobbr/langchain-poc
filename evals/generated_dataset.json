@@ -42,13 +42,6 @@
     "variant": "outdoor"
   },
   {
-    "question": "According to the provided text, what are the responsibilities of umpires in outdoor field hockey regarding the timing of the game?",
-    "ground_truth": "Umpires are responsible for ensuring that the full time is played and for indicating the end of time for each quarter and for the completion of a penalty corner if a quarter is prolonged.",
-    "source_text": "11.5 Umpires are responsible for ensuring that the full time is\nplayed and for indicating the end of time for each quarter\nand for the completion of a penalty corner if a quarter is\nprolonged.",
-    "context_guidance": "Derived from 11.5",
-    "variant": "outdoor"
-  },
-  {
     "question": "In outdoor field hockey, what is the maximum interior diameter, in millimeters, that a ring must have for the stick to pass through, inclusive of any additional coverings?",
     "ground_truth": "51",
     "source_text": "2.17 Inclusive of any additional coverings used, the stick must\npass through a ring with an interior diameter of 51 mm.",
@@ -133,24 +126,10 @@
     "variant": "indoor"
   },
   {
-    "question": "In indoor hockey, what does the term \"continuous\" refer to?",
-    "ground_truth": "All along the defined subject without interruption.",
-    "source_text": "mm.\nC\n\"continuous\" means all along the defined subject\nwithout interruption.",
-    "context_guidance": "Derived from 2.5",
-    "variant": "indoor"
-  },
-  {
     "question": "In indoor hockey, during a penalty corner, if the ball strikes discarded equipment like a hand protector, and this occurs inside the shooting circle, what is the appropriate award?",
     "ground_truth": "A penalty corner is awarded.",
     "source_text": "9.17 Players must not throw any object or piece of equipment onto\nthe pitch, at the ball, or at another player, umpire or person. Following a penalty corner, if the ball hits any\ndiscarded equipment, such as a hand protector,\nknee pads or a face mask, a free push should be\nawarded if this occurs outside the circle a penalty\ncorner awarded if this occurs inside the circle or\na penalty stroke if this prevents a certain goal\nfrom being scored.",
     "context_guidance": "Derived from 9.17",
-    "variant": "indoor"
-  },
-  {
-    "question": "According to the provided text, what is a key aspect of match preparation that umpires must undertake, regardless of whether the match is indoor or outdoor hockey?",
-    "ground_truth": "Umpires must prepare thoroughly for each match.",
-    "source_text": "3.1 Match preparation:\na umpires must prepare thoroughly for each match by",
-    "context_guidance": "Derived from 3.1",
     "variant": "indoor"
   },
   {
@@ -239,13 +218,6 @@
     "variant": "outdoor"
   },
   {
-    "question": "According to the provided text, what is the primary focus of the FIH regarding the sport of outdoor field hockey, and what actions will they take to achieve this?",
-    "ground_truth": "The FIH aims to make the sport more enjoyable for all participants while retaining its unique characteristics. They will continue to welcome suggestions for Rules developments or for clarification of current Rules, especially from National Hockey Associations.",
-    "source_text": "FIH believes our sport is enjoyable to play, officiate in and watch.\nNevertheless, FIH will continue to seek ways of making our sport\neven more enjoyable for all its participants while retaining its unique\nand attractive characteristics. This enables our sport to develop\nwhich is necessary in a world which makes large demands on\npersonal time and in which recreation and sport can contribute to\npersonal wellbeing. The FIH Rules Committee will therefore\ncontinue to welcome suggestions for Rules developments or for\nclarification of current Rules especially from National Hockey\nAssociations. National Associations are an important primary\nsource of advice and guidance but, if appropriate, Rules\nsuggestions or questions can be sent by email to info@fih.ch or to\nthe FIH postal address.",
-    "context_guidance": "Derived from Rule 13.2",
-    "variant": "outdoor"
-  },
-  {
     "question": "Regarding field hockey sticks used in outdoor play, what power does the FIH reserve the right to exercise concerning stick properties, even if they technically meet the specifications?",
     "ground_truth": "The FIH reserves the right to prohibit any stick which, in the opinion of the FIH Rules Committee, is unsafe or likely to have a detrimental impact on playing the game.",
     "source_text": "2.1 This section specifies the properties of the stick.\nProperties outside the specifications are not permitted.\nAlthough the properties are described as explicitly as\npossible, the FIH reserves the right to prohibit any stick\nwhich, in the opinion of the FIH Rules Committee, is\nunsafe or likely to have a detrimental impact on playing\nthe game.",
@@ -302,13 +274,6 @@
     "variant": "indoor"
   },
   {
-    "question": "According to the provided text, what are the primary responsibilities of umpires in indoor hockey, and how should they approach rule interpretation?",
-    "ground_truth": "Umpires must have a thorough knowledge of the Rules of Indoor Hockey, support and encourage skillful play, deal promptly and firmly with offenses, establish and maintain control, use all available tools for control, and apply the advantage Rule as much as possible. They should remember that the spirit of the Rule and common sense must govern interpretation.",
-    "source_text": "1.4 Umpires must: a have a thorough knowledge of the Rules of Indoor\nHockey but remember that the spirit of the Rule and\ncommon sense must govern interpretation\nb support and encourage skilful play, deal promptly and\nfirmly with offences and apply the appropriate\npenalties\nC establish control and maintain it throughout the match\nd\nuse all the available tools for control\ne\napply the advantage Rule as much as possible to\nassist a flowing and open match but without losing\ncontrol.",
-    "context_guidance": "Derived from 1.4",
-    "variant": "indoor"
-  },
-  {
     "question": "In indoor field hockey, a defender intentionally plays the ball over their own back-line, and the ball is not deflected by the goalkeeper. How is play restarted?",
     "ground_truth": "Play is restarted with a penalty corner.",
     "source_text": "7.4 When the ball is played over the back-line and no goal is\nscored: a\nIf played by an attacker, play is re-started with the\nball up to 9.10 metres from and in line with where it\ncrossed the back-line\nb If played unintentionally by a defender or deflected\nby a goalkeeper, play is re-started with the ball on\nthe centre-line and in line with where it crossed the\nback-line\n\u0441\nthe procedures for taking a free push apply.\nd\nif played intentionally by a defender, unless deflected\nby a goalkeeper, play is re-started with a penalty\ncorner.",
@@ -348,6 +313,104 @@
     "ground_truth": "A penalty stroke is awarded: a) for an offence by a defender in the circle which prevents the probable scoring of a goal; b) for an intentional offence in the circle by a defender against an opponent who has possession of the ball.",
     "source_text": "12.4 A penalty stroke is awarded: a for an offence by a defender in the circle which\nprevents the probable scoring of a goal\nb\nfor an intentional offence in the circle by a defender\nagainst an opponent who has possession of the ball",
     "context_guidance": "Derived from 12.4",
+    "variant": "indoor"
+  },
+  {
+    "question": "In outdoor field hockey, what color are the mandatory lines and markings for pitches on which Senior international hockey will be played, and what is a common alternative color for lines when hockey is not the priority sport?",
+    "ground_truth": "White lines and markings are mandatory for Senior international hockey pitches, and yellow is a common alternative color when hockey is not the priority sport.",
+    "source_text": "the side-lines and back-lines and all markings\nenclosed between them are part of the field\nd all marks must be made in white.\nWhite lines and markings are mandatory for\npitches on which Senior international hockey will\nbe played, and recommended for pitches for\nother matches, however it is recognised that\nmulti-sport pitches may have both different\ncolour lines and markings, as well as lines and\nmarkings for other sports. Where hockey is not\nthe priority sport, lines are often yellow.\nAdditionally, on sand filled pitches, when the\nsand is white, yellow marks give greater visibility.",
+    "context_guidance": "Derived from 1.2",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, according to the rules, what constitutes the playing side of the stick?",
+    "ground_truth": "The playing side of the stick is the entire side shown in figures 3 and 4 and the edges of that side.",
+    "source_text": "2.6 The playing side of the stick is the entire side shown in\nfigures 3 and 4 and the edges of that side.",
+    "context_guidance": "Derived from 2.6",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what conditions must be met for the application of tapes and resins to a stick?",
+    "ground_truth": "The tapes and resins must not be hazardous and the stick must conform to the specifications.",
+    "source_text": "2.22 The application of tapes and resins is permitted provided\nthat they are not hazardous and that the stick conforms\nto the specifications.",
+    "context_guidance": "Derived from 2.22",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what areas are marked inside the field around the goals and opposite the centres of the back-lines?",
+    "ground_truth": "Circles",
+    "source_text": "1.6 Areas referred to as the circles are marked inside the field\naround the goals and opposite the centres of the back-\nlines.",
+    "context_guidance": "Derived from 1.6",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is the maximum permissible weight, in grams, of a stick, and what is the maximum length of the stick as measured from the top of the handle to the bottom of the head?",
+    "ground_truth": "The maximum weight is 737 grams, and the maximum length is 105 cm.",
+    "source_text": "2.18 The total weight of the stick must not exceed 737 grams.\nThe length of the stick as measured from the top of the\nhandle to the bottom of the head of the stick (line X in\nFigure 3) shall not be more than 105 cm.",
+    "context_guidance": "Derived from 2.18",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is marked across the middle of the field?",
+    "ground_truth": "A centre-line",
+    "source_text": "1.4 A centre-line is marked across the middle of the field.",
+    "context_guidance": "Derived from 1.4",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In an outdoor field hockey match, what is the maximum number of players from each team allowed on the field simultaneously?",
+    "ground_truth": "Eleven",
+    "source_text": "9.1 A match is played between two teams with not more than\neleven players of each team on the field at the same time.",
+    "context_guidance": "Derived from 9.1",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In outdoor field hockey, what is the consequence if an attacker enters the circle before permitted during a penalty corner, and the player taking the push or hit from the backline fails to go beyond the centre-line?",
+    "ground_truth": "The penalty corner is taken again.",
+    "source_text": "an attacker enters the circle before permitted, the\nplayer taking the push or hit from the backline is\nrequired to go beyond the centre-line: the penalty\ncorner is taken again\nAttackers who are sent beyond the centre-line\nmay not return for re-taken penalty corners, but\nmay do so for a subsequently awarded penalty\ncorner\nIf for any other offence by attackers: a free hit is\nawarded to the defence.\nExcept as specified above, a free hit, penalty\ncorner or penalty stroke is awarded as specified\nelsewhere in the Rules.",
+    "context_guidance": "Derived from 13.6",
+    "variant": "outdoor"
+  },
+  {
+    "question": "In indoor field hockey, according to the Rules, what is awarded when a player or team is disadvantaged by an opponent breaking the Rules?",
+    "ground_truth": "a penalty",
+    "source_text": "12.1 Advantage: a penalty is awarded when a player or team has\nbeen disadvantaged by an opponent breaking the Rules.",
+    "context_guidance": "Derived from 12.1",
+    "variant": "indoor"
+  },
+  {
+    "question": "According to the rules, what action are players prohibited from performing with the ball in indoor hockey?",
+    "ground_truth": "Players must not hit the ball.",
+    "source_text": "9.5 Players must not hit the ball.",
+    "context_guidance": "Derived from 9.5",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor hockey, what specific situations at the end of each quarter and full-time necessitate prolonging the match?",
+    "ground_truth": "The match is prolonged to allow completion of a penalty corner or any subsequent penalty corner or penalty stroke.",
+    "source_text": "13.4 The match is prolonged at the end of each quarter and full-\ntime to allow completion of a penalty corner or any\nsubsequent penalty corner or penalty stroke",
+    "context_guidance": "Derived from 13.4",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor hockey, a goalkeeper wearing full protective equipment is permitted to use their arms, hands, and any other part of their body to push the ball away under what specific circumstances, according to the provided text?",
+    "ground_truth": "The action is permitted only as part of a goal-saving action or to move the ball away from the possibility of a goal-scoring action by opponents. It does not permit a goalkeeper to propel the ball forcefully with arms, hands, or body so that it travels a long distance.",
+    "source_text": "10.2 When the ball is inside the circle they are defending and they\nhave their stick in their hand: a\ngoalkeepers wearing full protective equipment are\npermitted to use their stick, feet, kickers, legs or leg\nguards to propel the ball and to use their stick, feet,\nkickers, legs, leg guards or any other part of their body\nto stop the ball or deflect it in any direction including\nover the back-line\n27\nGoalkeepers are not permitted to conduct\nthemselves in a manner which is dangerous to\nother players by taking advantage of the\nprotective equipment they wear.\nb goalkeepers wearing full protective equipment are\npermitted to use arms, hands and any other part of\ntheir body to push the ball away.\nThe action in rule b above is permitted only as\npart of a goal saving action or to move the ball\naway from the possibility of a goal scoring action\nby opponents. It does not permit a goalkeeper to\npropel the ball forcefully with arms, hands or\nbody so that it travels a long distance.",
+    "context_guidance": "Derived from 10.2",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor hockey, where must a temporarily suspended player remain until the umpire allows them to resume play?",
+    "ground_truth": "In a designated place.",
+    "source_text": "14.2 Temporarily suspended players must remain in a designated\nplace until permitted by the umpire who suspended them to\nresume play.",
+    "context_guidance": "Derived from 14.2",
+    "variant": "indoor"
+  },
+  {
+    "question": "In indoor field hockey, what is the maximum permissible weight of a stick, and what is the maximum length of the stick as measured from the top of the handle to the bottom of the head?",
+    "ground_truth": "The maximum weight is 737 grams, and the maximum length is 105 cm.",
+    "source_text": "2.18 The total weight of the stick must not exceed 737 grams. The\nlength of the stick as measured from the top of the handle to\nthe bottom of the head of the stick (line X in Figure 3) shall\nnot be more than 105 cm.",
+    "context_guidance": "Derived from 2.18",
     "variant": "indoor"
   }
 ]
