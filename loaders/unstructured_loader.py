@@ -1,6 +1,5 @@
 import re
 from typing import List
-from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain_core.documents import Document
 from .base import BaseLoader
 
@@ -8,6 +7,15 @@ class UnstructuredLoader(BaseLoader):
     """Legacy loader using local Unstructured.io processing + Regex chunking."""
 
     def load_and_chunk(self, file_path: str, variant: str) -> List[Document]:
+        # Deferred import to avoid crash if 'unstructured' is not installed
+        try:
+            from langchain_community.document_loaders import UnstructuredPDFLoader
+        except ImportError:
+            raise ImportError(
+                "The 'unstructured' library is required for this legacy loader. "
+                "Please install it with `pip install unstructured[pdf]`."
+            )
+            
         # 1. Parse raw elements
         loader = UnstructuredPDFLoader(file_path, mode="elements")
         raw_elements = loader.load()
