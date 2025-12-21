@@ -1,14 +1,22 @@
 .git
 .gitignore
 .venv/
-chroma_db/
-debug_output/
 __pycache__/
 *.pyc
 .pytest_cache/
 .vscode/
-README.md
-docs/
 .env
-node_modules/
 
+# Local data / Docs
+README.md
+TESTING.md
+docs/
+chroma_db/
+debug_output/
+
+# Node / React
+node_modules/
+web/node_modules/
+web/dist/
+web/.env
+web/.env.local

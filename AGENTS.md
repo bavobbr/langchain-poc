@@ -16,13 +16,16 @@ We follow a modular **MVC + Repository** pattern. See [README.md](README.md) for
 - `evals/` – Evaluation system (Golden Dataset generation, Bot Evaluation).
 - `scripts/` – Developer utilities (e.g., `cloudsql_debug_schema.py`, `pdf_ingestion_preview.py`).
 - `docs/` – Source PDFs used for ingestion (tracked via Git LFS).
+- `Dockerfile` – Unified production container (React + FastAPI).
+- `Dockerfile.admin` – Admin dashboard container (Streamlit).
 - `chroma_db/` – Optional local vector store for debugging.
 
 ## Build, Test, and Development Commands
 
 ### Setup
 - Create venv and install deps:
-  - `python3 -m venv .venv && source .venv/bin/activate`
+  - `python3 -m venv .venv`
+  - **IMPORTANT**: You must always source the venv in your shell before running any python or pip commands: `source .venv/bin/activate` or `. .venv/bin/activate`.
   - `pip install -r requirements.txt`
 - Install dev tools: `make dev-install`
 - Frontend Setup (optional):

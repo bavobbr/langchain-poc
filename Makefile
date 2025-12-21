@@ -1,7 +1,7 @@
-PY=python3
+PY=.venv/bin/python
 
 .PHONY: install dev-install pre-commit-install lint fmt run test \
-        truncate \
+        truncate openapi api web \
         chroma_debug_search chroma_rag_pipeline \
         cloudsql_debug_schema cloudsql_rag_pipeline cloudsql_truncate_table \
         debug_iam_batch_only debug_prompt_context delete_docai_processor \
@@ -31,8 +31,18 @@ fmt:
 run:
 	streamlit run app.py
 
+api:
+	$(PY) -m uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+
+web:
+	@echo "Tip: Create web/.env from web/.env.example for local configuration"
+	cd web && npm run dev
+
 test:
 	pytest -q || true
+
+openapi:
+	$(PY) -m scripts.export_openapi
 
 # Convenience targets for scripts
 truncate:

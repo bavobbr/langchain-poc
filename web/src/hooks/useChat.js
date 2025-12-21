@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-const API_BASE = 'http://localhost:8000'; // TODO: Make configurable
-const API_KEY = 'dev-secret-key'; // TODO: Make configurable
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : '';
+const API_KEY = import.meta.env.VITE_API_KEY || 'dev-secret-key';
 
 export function useChat() {
     const [messages, setMessages] = useState([]);

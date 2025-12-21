@@ -8,6 +8,7 @@ __pycache__/
 
 # Git
 .git/
+.gitignore
 
 # Local data
 chroma_db/
@@ -16,9 +17,11 @@ debug_output/
 
 # OS/Editor
 .DS_Store
-.idea/
 .vscode/
 
-# Node (if any tooling)
+# Node / React
 node_modules/
-
+web/node_modules/
+web/dist/
+web/.env
+web/.env.local

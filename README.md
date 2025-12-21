@@ -253,7 +253,8 @@ We follow a modular **MVC + Repository** pattern:
 ├── database.py            # (Model/Repository) Raw SQL handling & DB Connections
 ├── config.py              # Configuration & Constants
 ├── requirements.txt       # Dependencies
-├── Dockerfile             # Container definition
+├── Dockerfile             # [UNIFIED] Frontend (React) + Backend (FastAPI)
+├── Dockerfile.admin       # [ADMIN] Streamlit Dashboard
 └── docs/                  # Raw PDF Rulebooks
 ```
 
@@ -423,19 +424,26 @@ python evals/evaluate.py --bot mock
 
 ## Deployment (Google Cloud Run)
 
-To deploy the application as a public web service:
-
-**1. Permissions**
-Ensure the default Compute Service Account has the required roles:
-* `Cloud SQL Client`
-* `Vertex AI User`
-
-**2. Deploy Command**
-We increase memory to 1GiB to handle the PDF parsing overhead.
+### 1. Unified App (React + FastAPI)
+This is the production-ready service. It builds the React UI and serves it via the FastAPI backend.
 
 ```bash
-gcloud run deploy fih-rag-app \
+gcloud run deploy fih-rag-public \
     --source . \
+    --region europe-west1 \
+    --memory 1Gi \
+    --allow-unauthenticated \
+    --set-build-env-vars VITE_API_KEY=dev-secret-key \
+    --set-env-vars 'GCP_PROJECT_ID=YOUR_PROJECT_ID,CLOUDSQL_INSTANCE=fih-rag-db,DB_USER=postgres,DB_PASS=YOUR_DB_PASSWORD,API_KEY=dev-secret-key'
+```
+
+### 2. Admin Dashboard (Streamlit)
+Used for data ingestion and system monitoring.
+
+```bash
+gcloud run deploy fih-rag-admin \
+    --source . \
+    --dockerfile Dockerfile.admin \
     --region europe-west1 \
     --memory 1Gi \
     --allow-unauthenticated \
