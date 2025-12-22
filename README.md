@@ -1,8 +1,25 @@
-# FIH Rules AI Agent (RAG PoC)
+# FIH Rules AI Agent
 
-A Cloud-Native Retrieval-Augmented Generation (RAG) system designed to answer complex queries about **International Hockey Federation (FIH) Rules**.
+A Cloud-Native Retrieval-Augmented Generation (RAG) system designed to provide instant, expert-level clarity on **International Hockey Federation (FIH) Rules**.
 
-Unlike generic "Chat with PDF" tools, this project implements **domain-specific semantic chunking** and **multi-variant routing** (Outdoor vs. Indoor), ensuring answers are grounded in specific rule citations and the correct context.
+### 🚀 What does this do for you?
+
+Navigating thousands of lines of official rulebooks during a match or training can be impossible. This agent serves as a **"Digital Umpire's Assistant"**, providing:
+
+*   **Instant Rule Clarification**: Ask natural questions like *"Can I hit the ball in indoor?"* or *"What is the penalty for a deliberate foul in the circle?"* and get an answer in seconds.
+*   **Variant-Aware Reasoning**: Automatically detects if you are asking about **Outdoor**, **Indoor**, or **Hockey5s** rules, preventing confusion between different rulebooks.
+*   **Verifiable Citations**: Every answer comes with direct references to rule numbers (e.g., *Rule 9.12*) and source page numbers, so you can trust and verify every response.
+*   **Conversational Intelligence**: Remembers the context of your chat. You can ask *"What if it was accidental?"* as a follow-up, and the agent will know you're still discussing the previous rule.
+
+---
+
+### 👥 Who is this for?
+
+*   **Umpires**: Quickly double-check card durations or technical specifications between quarters or matches.
+*   **Coaches & Players**: Settle debates during training and ensure tactical strategies are fully compliant with current FIH regulations.
+*   **Fans & Commentators**: Gain instant context and rule-based explanations for umpiring decisions during live play.
+
+---
 
 ---
 
@@ -252,7 +269,8 @@ We follow a modular **MVC + Repository** pattern:
 ├── rag_engine.py          # (Controller) Orchestrates AI, Chunking, and Context logic
 ├── database.py            # (Model/Repository) Raw SQL handling & DB Connections
 ├── config.py              # Configuration & Constants
-├── requirements.txt       # Dependencies
+├── requirements.txt       # [CORE] Production dependencies (FastAPI runtime)
+├── requirements-dev.txt   # [DEV] Evaluation, heavy ingestion, and testing tools
 ├── Dockerfile             # [UNIFIED] Frontend (React) + Backend (FastAPI)
 ├── Dockerfile.admin       # [ADMIN] Streamlit Dashboard
 └── docs/                  # Raw PDF Rulebooks
@@ -279,8 +297,11 @@ Clone the repository and install dependencies:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
+
+> [!NOTE]
+> We use **`requirements-dev.txt`** for local development. It includes all production dependencies (`requirements.txt`) plus heavy tools needed for evaluation (RAGAS) and local PDF parsing (Unstructured).
 
 ### 2.1 Local Environment (.env)
 Create a `.env` file at the repo root to store local credentials and config. The app auto-loads it via `python-dotenv`:

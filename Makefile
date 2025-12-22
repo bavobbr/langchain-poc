@@ -14,7 +14,8 @@ PY=.venv/bin/python
 install:
 	$(PY) -m pip install -r requirements.txt
 
-dev-install: install
+dev-install:
+	$(PY) -m pip install -r requirements-dev.txt
 	$(PY) -m pip install pre-commit ruff black pytest
 
 pre-commit-install:

@@ -12,6 +12,8 @@ We follow a modular **MVC + Repository** pattern. See [README.md](README.md) for
 - `rag_engine.py` – Orchestration, chunking, retrieval, LLM calls (Controller).
 - `database.py` – Raw SQL + connectors for Cloud SQL/Postgres (Model/Repository).
 - `config.py` – Configuration constants (project, region, DB, table names).
+- `requirements.txt` – Core production dependencies (Cloud Run runtime).
+- `requirements-dev.txt` – Full development dependencies (Evals, Unstructured, Testing).
 - `loaders/` – Document ingestion strategies (e.g., `DocumentAILoader`, `UnstructuredLoader`).
 - `evals/` – Evaluation system (Golden Dataset generation, Bot Evaluation).
 - `scripts/` – Developer utilities (e.g., `cloudsql_debug_schema.py`, `pdf_ingestion_preview.py`).
@@ -26,7 +28,8 @@ We follow a modular **MVC + Repository** pattern. See [README.md](README.md) for
 - Create venv and install deps:
   - `python3 -m venv .venv`
   - **IMPORTANT**: You must always source the venv in your shell before running any python or pip commands: `source .venv/bin/activate` or `. .venv/bin/activate`.
-  - `pip install -r requirements.txt`
+  - **IMPORTANT**: You must always source the venv in your shell before running any python or pip commands: `source .venv/bin/activate` or `. .venv/bin/activate`.
+  - `pip install -r requirements-dev.txt`
 - Install dev tools: `make dev-install`
 - Frontend Setup (optional):
   - `cd web && npm install`
@@ -62,7 +65,7 @@ We have a comprehensive testing strategy detailed in [TESTING.md](TESTING.md).
 ## Commit & Pull Request Guidelines
 - Commits: imperative, concise subject; explain “why” in body when non‑obvious.
 - PRs: include description, steps to reproduce/verify, and relevant screenshots (Streamlit UI). Link related issues.
-- CI considerations: ensure `pip install -r requirements.txt` and `streamlit run app.py` work locally before requesting review.
+- CI considerations: ensure `pip install -r requirements.txt` (for production) and `pip install -r requirements-dev.txt` (for testing) work locally before requesting review.
 
 ## Security & Configuration Tips
 - Do not commit secrets. Prefer `gcloud auth application-default login` and environment variables for local/dev.
